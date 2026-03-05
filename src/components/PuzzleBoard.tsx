@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Dimensions, LayoutAnimation, Platform, UIManager } from 'react-native';
-import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Tile from './Tile';
 import { IPuzzleState } from '../../types';
 import { isValidMove, makeMove, getPosition } from '../utils/puzzleLogic';
@@ -14,6 +14,39 @@ interface IPuzzleBoardProps {
   puzzleState: IPuzzleState;
   onMove: (newBoard: number[]) => void;
 }
+
+interface IGestureTileProps {
+  value: number;
+  index: number;
+  size: number;
+  onTilePress: (index: number) => void;
+  gameMode: 'number' | 'photo';
+  imageUri?: string;
+  tileSize: number;
+  onSwipe: (gestureState: any, tileIndex: number) => void;
+}
+
+const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, size, onTilePress, gameMode, imageUri, tileSize, onSwipe }) => {
+  const panGesture = useMemo(
+    () => Gesture.Pan().runOnJS(true).onEnd((event) => onSwipe(event, index)),
+    [index, onSwipe]
+  );
+  return (
+    <GestureDetector gesture={panGesture}>
+      <View>
+        <Tile
+          value={value}
+          index={index}
+          size={size}
+          onTilePress={onTilePress}
+          gameMode={gameMode}
+          imageUri={imageUri}
+          tileSize={tileSize}
+        />
+      </View>
+    </GestureDetector>
+  );
+});
 
 const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
   const screenWidth = Dimensions.get('window').width;
@@ -34,21 +67,20 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
       try {
         LayoutAnimation.configureNext(
           LayoutAnimation.Presets.easeInEaseOut,
-          () => {
-            isMoving.current = false;
-          }
+          () => { isMoving.current = false; }
         );
         const newBoard = makeMove(puzzleState.board, index);
         onMove(newBoard);
       } catch (e) {
-        isMoving.current = false;
         console.error('move error', e);
+      } finally {
+        setTimeout(() => { isMoving.current = false; }, 350);
       }
     }
   };
 
 
-  const handleSwipe = (gestureState: any, tileIndex: number) => {
+  const handleSwipe = useCallback((gestureState: any, tileIndex: number) => {
     if (puzzleState.isComplete || isMoving.current) return;
 
     const { translationX, translationY } = gestureState;
@@ -84,17 +116,17 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
       try {
         LayoutAnimation.configureNext(
           LayoutAnimation.Presets.easeInEaseOut,
-          () => {
-            isMoving.current = false;
-          }
+          () => { isMoving.current = false; }
         );
         const newBoard = makeMove(puzzleState.board, tileIndex);
         onMove(newBoard);
       } catch (e) {
-        isMoving.current = false;
+        console.error('swipe error', e);
+      } finally {
+        setTimeout(() => { isMoving.current = false; }, 350);
       }
     }
-  };
+  }, [puzzleState, onMove, isMoving]);
 
   const renderTile = (value: number, index: number) => {
     if (value === 0) {
@@ -112,25 +144,18 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
       );
     }
 
-    // Create a pan gesture for this tile
-    const panGesture = Gesture.Pan()
-      .onEnd((event) => handleSwipe(event, index));
-
     return (
-      <GestureDetector key={`gesture-${index}-${value}`} gesture={panGesture}>
-        <View>
-          <Tile
-            key={`${index}-${value}`}
-            value={value}
-            index={index}
-            size={puzzleState.size}
-            onTilePress={handleTilePress}
-            gameMode={puzzleState.gameMode}
-            imageUri={puzzleState.imageUri}
-            tileSize={tileSize}
-          />
-        </View>
-      </GestureDetector>
+      <GestureTile
+        key={`gesture-${index}-${value}`}
+        value={value}
+        index={index}
+        size={puzzleState.size}
+        onTilePress={handleTilePress}
+        gameMode={puzzleState.gameMode}
+        imageUri={puzzleState.imageUri}
+        tileSize={tileSize}
+        onSwipe={handleSwipe}
+      />
     );
   };
 
@@ -154,11 +179,11 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
   };
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <View style={styles.container}>
       <View style={[styles.board, { width: boardSize, height: boardSize }]}>
         {renderBoard()}
       </View>
-    </GestureHandlerRootView>
+    </View>
   );
 };
 
