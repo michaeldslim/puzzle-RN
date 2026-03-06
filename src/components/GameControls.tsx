@@ -7,8 +7,11 @@ interface IGameControlsProps {
   currentSize: PuzzleSize;
   isComplete: boolean;
   gameMode: 'number' | 'photo';
+  canUndo: boolean;
   onSizeChange: (size: PuzzleSize) => void;
   onShuffle: () => void;
+  onHint: () => void;
+  onUndo: () => void;
   onModeToggle: () => void;
   onImagePick: (imageUri: string) => void;
 }
@@ -17,8 +20,11 @@ const GameControls: React.FC<IGameControlsProps> = ({
   currentSize,
   isComplete,
   gameMode,
+  canUndo,
   onSizeChange,
   onShuffle,
+  onHint,
+  onUndo,
   onModeToggle,
   onImagePick,
 }) => {
@@ -124,6 +130,20 @@ const GameControls: React.FC<IGameControlsProps> = ({
             <Text style={styles.imageButtonText}>📷 Pick Image</Text>
           </TouchableOpacity>
         )}
+        <TouchableOpacity
+          style={[styles.hintButton, isComplete && styles.disabledButton]}
+          onPress={onHint}
+          disabled={isComplete}
+        >
+          <Text style={[styles.hintButtonText, isComplete && styles.disabledButtonText]}>💡 Hint</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.undoButton, !canUndo && styles.disabledButton]}
+          onPress={onUndo}
+          disabled={!canUndo}
+        >
+          <Text style={[styles.undoButtonText, !canUndo && styles.disabledButtonText]}>↩️ Undo</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.shuffleButton} onPress={onShuffle}>
           <Text style={styles.shuffleButtonText}>🔀 Shuffle</Text>
         </TouchableOpacity>
@@ -241,6 +261,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  hintButton: {
+    flex: 1,
+    backgroundColor: '#f59e0b',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  hintButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  undoButton: {
+    flex: 1,
+    backgroundColor: '#64748b',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  undoButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  disabledButton: {
+    opacity: 0.45,
+  },
+  disabledButtonText: {
+    color: '#ffffff',
   },
   shuffleButton: {
     flex: 1,

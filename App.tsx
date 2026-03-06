@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, View, ScrollView, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -11,6 +11,9 @@ export default function App() {
   const {
     puzzleState,
     handleMove,
+    handleUndo,
+    canUndo,
+    handleHint,
     handleShuffle,
     handleModeToggle,
     handleImageSet,
@@ -25,13 +28,17 @@ export default function App() {
             <PuzzleBoard
               puzzleState={puzzleState}
               onMove={handleMove}
+              hintIndex={puzzleState.hintIndex}
             />
             <GameControls
               currentSize={puzzleState.size as PuzzleSize}
               isComplete={puzzleState.isComplete}
               gameMode={puzzleState.gameMode}
+              canUndo={canUndo}
               onSizeChange={handleSizeChange}
               onShuffle={handleShuffle}
+              onHint={handleHint}
+              onUndo={handleUndo}
               onModeToggle={handleModeToggle}
               onImagePick={handleImageSet}
             />

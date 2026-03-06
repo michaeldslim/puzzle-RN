@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "puzzle-RN",
-    "slug": "puzzle-RN",
+    "name": "Puzzle Slide",
+    "slug": "Puzzle Slide",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

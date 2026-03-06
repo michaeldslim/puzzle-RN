@@ -3,7 +3,7 @@ import { View, StyleSheet, Dimensions, LayoutAnimation, Platform, UIManager } fr
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Tile from './Tile';
 import { IPuzzleState } from '../../types';
-import { isValidMove, makeMove, getPosition } from '../utils/puzzleLogic';
+import { isValidMove, makeMove, getPosition, findEmptyTile, getValidMoves } from '../utils/puzzleLogic';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -13,6 +13,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 interface IPuzzleBoardProps {
   puzzleState: IPuzzleState;
   onMove: (newBoard: number[]) => void;
+  hintIndex: number | null;
 }
 
 interface IGestureTileProps {
@@ -23,10 +24,12 @@ interface IGestureTileProps {
   gameMode: 'number' | 'photo';
   imageUri?: string;
   tileSize: number;
+  isMovable?: boolean;
+  isHint?: boolean;
   onSwipe: (gestureState: any, tileIndex: number) => void;
 }
 
-const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, size, onTilePress, gameMode, imageUri, tileSize, onSwipe }) => {
+const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, size, onTilePress, gameMode, imageUri, tileSize, isMovable, isHint, onSwipe }) => {
   const panGesture = useMemo(
     () => Gesture.Pan().runOnJS(true).onEnd((event) => onSwipe(event, index)),
     [index, onSwipe]
@@ -42,13 +45,15 @@ const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, siz
           gameMode={gameMode}
           imageUri={imageUri}
           tileSize={tileSize}
+          isMovable={isMovable}
+          isHint={isHint}
         />
       </View>
     </GestureDetector>
   );
 });
 
-const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
+const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintIndex }) => {
   const screenWidth = Dimensions.get('window').width;
   const boardSize = Math.min(screenWidth - 40, 400);
   // Adjust tile size calculation to account for margins and padding
@@ -58,6 +63,9 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
   const tileSize = (availableSpace - (puzzleState.size - 1) * tilePadding) / puzzleState.size;
 
   const isMoving = useRef(false);
+
+  const emptyIndex = findEmptyTile(puzzleState.board);
+  const movableIndices = new Set(getValidMoves(emptyIndex, puzzleState.size));
 
   const handleTilePress = (index: number) => {
     if (puzzleState.isComplete || isMoving.current) return;
@@ -129,6 +137,8 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
   }, [puzzleState, onMove, isMoving]);
 
   const renderTile = (value: number, index: number) => {
+    const isMovable = !puzzleState.isComplete && movableIndices.has(index);
+    const isHint = hintIndex === index;
     if (value === 0) {
       return (
         <Tile
@@ -140,6 +150,8 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
           gameMode={puzzleState.gameMode}
           imageUri={puzzleState.imageUri}
           tileSize={tileSize}
+          isMovable={false}
+          isHint={false}
         />
       );
     }
@@ -154,6 +166,8 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove }) => {
         gameMode={puzzleState.gameMode}
         imageUri={puzzleState.imageUri}
         tileSize={tileSize}
+        isMovable={isMovable}
+        isHint={isHint}
         onSwipe={handleSwipe}
       />
     );
