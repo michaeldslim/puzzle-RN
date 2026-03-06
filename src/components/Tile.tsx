@@ -10,6 +10,8 @@ const Tile: React.FC<ITileProps> = ({
   gameMode,
   imageUri,
   tileSize,
+  isMovable,
+  isHint,
 }) => {
   const isEmpty = value === 0;
 
@@ -61,12 +63,21 @@ const Tile: React.FC<ITileProps> = ({
       style={[
         styles.tile,
         styles.filledTile,
+        isMovable && styles.movableTile,
+        isHint && styles.hintTile,
         { width: tileSize, height: tileSize },
       ]}
       onPress={() => onTilePress(index)}
       activeOpacity={0.7}
     >
-      {gameMode === 'photo' ? renderPhotoTile() : renderNumberTile()}
+      <View style={styles.tileContent}>
+        {gameMode === 'photo' ? renderPhotoTile() : renderNumberTile()}
+        {isHint && (
+          <View style={styles.hintBadge}>
+            <Text style={styles.hintBadgeText}>💡</Text>
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 };
@@ -96,6 +107,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#e1e5e9',
+  },
+  movableTile: {
+    borderColor: '#3b82f6',
+    borderWidth: 2,
+    backgroundColor: '#eff6ff',
+  },
+  hintTile: {
+    borderColor: '#f59e0b',
+    borderWidth: 3,
+    backgroundColor: '#fffbeb',
+  },
+  tileContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hintBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#ffffff',
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  hintBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   tileText: {
     fontWeight: '600',

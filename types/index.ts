@@ -6,6 +6,8 @@ export interface IPuzzleState {
   isComplete: boolean;
   gameMode: 'number' | 'photo';
   imageUri?: string;
+  history: number[][];
+  hintIndex: number | null;
 }
 
 export interface ITileProps {
@@ -16,10 +18,12 @@ export interface ITileProps {
   gameMode: 'number' | 'photo';
   imageUri?: string;
   tileSize: number;
+  isMovable?: boolean;
+  isHint?: boolean;
 }
 
 export interface IPuzzleAction {
-  type: 'MOVE_TILE' | 'SHUFFLE' | 'SET_SIZE' | 'RESET_TIMER' | 'SET_COMPLETE' | 'SET_MODE' | 'SET_IMAGE';
+  type: 'MOVE_TILE' | 'SHUFFLE' | 'SET_SIZE' | 'RESET_TIMER' | 'SET_COMPLETE' | 'SET_MODE' | 'SET_IMAGE' | 'UNDO' | 'SHOW_HINT' | 'CLEAR_HINT';
   payload?: any;
 }
 
