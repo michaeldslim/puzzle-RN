@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, Image, Dimensions } from 'react-native';
 import { PuzzleSize } from '../../types';
 import { pickImageFromGallery, takePhoto } from '../utils/imageUtils';
 
@@ -8,6 +8,7 @@ interface IGameControlsProps {
   isComplete: boolean;
   gameMode: 'number' | 'photo';
   canUndo: boolean;
+  imageUri?: string;
   onSizeChange: (size: PuzzleSize) => void;
   onShuffle: () => void;
   onHint: () => void;
@@ -21,6 +22,7 @@ const GameControls: React.FC<IGameControlsProps> = ({
   isComplete,
   gameMode,
   canUndo,
+  imageUri,
   onSizeChange,
   onShuffle,
   onHint,
@@ -28,7 +30,7 @@ const GameControls: React.FC<IGameControlsProps> = ({
   onModeToggle,
   onImagePick,
 }) => {
-
+  const [previewVisible, setPreviewVisible] = useState(false);
   const sizes: PuzzleSize[] = [3, 4, 5];
 
   const handleImagePick = async () => {
@@ -95,11 +97,18 @@ const GameControls: React.FC<IGameControlsProps> = ({
         </View>
       </View>
 
-      {/* Row 2: Pick Image (photo mode only, full-width) */}
+      {/* Row 2: Pick Image + Preview (photo mode only) */}
       {gameMode === 'photo' && (
-        <TouchableOpacity style={styles.imageButton} onPress={handleImagePick}>
-          <Text style={styles.imageButtonText}>📷 Pick Image</Text>
-        </TouchableOpacity>
+        <View style={styles.photoRow}>
+          <TouchableOpacity style={[styles.imageButton, { flex: 1 }]} onPress={handleImagePick}>
+            <Text style={styles.imageButtonText}>📷 Pick Image</Text>
+          </TouchableOpacity>
+          {imageUri && (
+            <TouchableOpacity style={styles.previewButton} onPress={() => setPreviewVisible(true)}>
+              <Text style={styles.previewButtonText}>👁️</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
 
       {/* Row 3: Always 3 action buttons, consistent size */}
@@ -128,6 +137,20 @@ const GameControls: React.FC<IGameControlsProps> = ({
           <Text style={styles.actionLabel}>Shuffle</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Image preview modal */}
+      <Modal visible={previewVisible} transparent animationType="fade" onRequestClose={() => setPreviewVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setPreviewVisible(false)}>
+          {imageUri && (
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.previewImage}
+              resizeMode="contain"
+            />
+          )}
+          <Text style={styles.modalDismiss}>Tap anywhere to close</Text>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -221,6 +244,11 @@ const styles = StyleSheet.create({
   },
 
   /* Row 2 */
+  photoRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'stretch',
+  },
   imageButton: {
     backgroundColor: '#0ea5e9',
     paddingVertical: 11,
@@ -231,6 +259,33 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '600',
+  },
+  previewButton: {
+    backgroundColor: '#0ea5e9',
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewButtonText: {
+    fontSize: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.88)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  previewImage: {
+    width: Dimensions.get('window').width - 32,
+    height: Dimensions.get('window').width - 32,
+    borderRadius: 12,
+  },
+  modalDismiss: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: 13,
   },
 
   /* Row 3 */

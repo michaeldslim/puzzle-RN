@@ -2,7 +2,7 @@ import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import { IPuzzleState, IPuzzleAction, PuzzleSize } from '../../types';
-import { shuffleBoard, isSolved, findEmptyTile, getValidMoves, makeMove } from '../utils/puzzleLogic';
+import { shuffleBoard, isSolved, findEmptyTile, findBestHintMove } from '../utils/puzzleLogic';
 
 const initialState: IPuzzleState = {
   board: shuffleBoard(3),
@@ -120,24 +120,6 @@ export const usePuzzleGame = () => {
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
 
-  const getManhattanDistance = useCallback((board: number[], size: number): number => {
-    let distance = 0;
-    for (let index = 0; index < board.length; index++) {
-      const value = board[index];
-      if (value === 0) continue;
-
-      const currentRow = Math.floor(index / size);
-      const currentCol = index % size;
-
-      const goalIndex = value - 1;
-      const goalRow = Math.floor(goalIndex / size);
-      const goalCol = goalIndex % size;
-
-      distance += Math.abs(currentRow - goalRow) + Math.abs(currentCol - goalCol);
-    }
-    return distance;
-  }, []);
-
   const handleMove = useCallback((newBoard: number[]) => {
     dispatch({ type: 'MOVE_TILE', payload: newBoard });
   }, []);
@@ -165,29 +147,8 @@ export const usePuzzleGame = () => {
 
   const handleHint = useCallback(() => {
     if (state.isComplete) return;
-
-    const emptyIndex = findEmptyTile(state.board);
-    const validMoves = getValidMoves(emptyIndex, state.size);
-    if (validMoves.length === 0) return;
-
-    let bestScore = Number.POSITIVE_INFINITY;
-    const bestMoves: number[] = [];
-
-    for (const moveIndex of validMoves) {
-      const nextBoard = makeMove(state.board, moveIndex);
-      const nextScore = getManhattanDistance(nextBoard, state.size);
-
-      if (nextScore < bestScore) {
-        bestScore = nextScore;
-        bestMoves.length = 0;
-        bestMoves.push(moveIndex);
-      } else if (nextScore === bestScore) {
-        bestMoves.push(moveIndex);
-      }
-    }
-
-    const candidateMoves = bestMoves;
-    const hintTileIndex = candidateMoves[Math.floor(Math.random() * candidateMoves.length)];
+    const hintTileIndex = findBestHintMove(state.board, state.size);
+    if (hintTileIndex === null) return;
     dispatch({ type: 'SHOW_HINT', payload: hintTileIndex });
     if (hintTimeoutRef.current) {
       clearTimeout(hintTimeoutRef.current);
@@ -197,7 +158,7 @@ export const usePuzzleGame = () => {
       dispatch({ type: 'CLEAR_HINT' });
       hintTimeoutRef.current = null;
     }, 3000);
-  }, [state.board, state.size, state.isComplete, getManhattanDistance]);
+  }, [state.board, state.size, state.isComplete]);
 
   useEffect(() => {
     return () => {

@@ -167,3 +167,70 @@ export const shuffleBoard = (size: number): number[] => {
   
   return board;
 };
+
+/**
+ * Manhattan distance heuristic — sum of each tile's distance from its goal position
+ */
+export const getManhattanDistance = (board: number[], size: number): number => {
+  let distance = 0;
+  for (let i = 0; i < board.length; i++) {
+    const val = board[i];
+    if (val === 0) continue;
+    const goalIdx = val - 1;
+    distance +=
+      Math.abs(Math.floor(i / size) - Math.floor(goalIdx / size)) +
+      Math.abs((i % size) - (goalIdx % size));
+  }
+  return distance;
+};
+
+/**
+ * Depth-limited DFS lookahead that returns the first move of the best
+ * path found within maxDepth steps. Avoids undo cycles by tracking
+ * visited states per path (with backtracking).
+ */
+export const findBestHintMove = (board: number[], size: number, maxDepth: number = 8): number | null => {
+  const initialEmpty = findEmptyTile(board);
+  const firstMoves = getValidMoves(initialEmpty, size);
+  if (firstMoves.length === 0) return null;
+
+  let bestScore = Number.POSITIVE_INFINITY;
+  let bestFirstMove: number = firstMoves[0];
+  const visited = new Set<string>();
+
+  const dfs = (
+    b: number[],
+    emptyIdx: number,
+    depth: number,
+    firstMove: number,
+    prevEmpty: number
+  ): void => {
+    const score = getManhattanDistance(b, size);
+    if (score < bestScore) {
+      bestScore = score;
+      bestFirstMove = firstMove;
+    }
+    if (score === 0 || depth >= maxDepth) return;
+
+    for (const move of getValidMoves(emptyIdx, size)) {
+      if (move === prevEmpty) continue; // skip immediate undo
+      const next = makeMove(b, move);
+      const key = next.join(',');
+      if (!visited.has(key)) {
+        visited.add(key);
+        dfs(next, move, depth + 1, firstMove, emptyIdx);
+        visited.delete(key); // backtrack so sibling paths can visit same state
+      }
+    }
+  };
+
+  for (const firstMove of firstMoves) {
+    const next = makeMove(board, firstMove);
+    const key = next.join(',');
+    visited.add(key);
+    dfs(next, firstMove, 1, firstMove, initialEmpty);
+    visited.delete(key);
+  }
+
+  return bestFirstMove;
+};

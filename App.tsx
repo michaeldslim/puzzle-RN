@@ -46,6 +46,7 @@ export default function App() {
               isComplete={puzzleState.isComplete}
               gameMode={puzzleState.gameMode}
               canUndo={canUndo}
+              imageUri={puzzleState.imageUri}
               onSizeChange={handleSizeChange}
               onShuffle={handleShuffle}
               onHint={handleHint}
