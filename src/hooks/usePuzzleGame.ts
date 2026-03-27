@@ -170,7 +170,6 @@ export const usePuzzleGame = () => {
     const validMoves = getValidMoves(emptyIndex, state.size);
     if (validMoves.length === 0) return;
 
-    const currentScore = getManhattanDistance(state.board, state.size);
     let bestScore = Number.POSITIVE_INFINITY;
     const bestMoves: number[] = [];
 
@@ -187,7 +186,7 @@ export const usePuzzleGame = () => {
       }
     }
 
-    const candidateMoves = bestScore <= currentScore ? bestMoves : validMoves;
+    const candidateMoves = bestMoves;
     const hintTileIndex = candidateMoves[Math.floor(Math.random() * candidateMoves.length)];
     dispatch({ type: 'SHOW_HINT', payload: hintTileIndex });
     if (hintTimeoutRef.current) {

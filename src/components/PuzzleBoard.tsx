@@ -3,7 +3,7 @@ import { View, StyleSheet, Dimensions, LayoutAnimation, Platform, UIManager } fr
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Tile from './Tile';
 import { IPuzzleState } from '../../types';
-import { isValidMove, makeMove, getPosition, findEmptyTile, getValidMoves } from '../utils/puzzleLogic';
+import { isValidMove, makeMove, getPosition, findEmptyTile } from '../utils/puzzleLogic';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -24,13 +24,12 @@ interface IGestureTileProps {
   gameMode: 'number' | 'photo';
   imageUri?: string;
   tileSize: number;
-  isMovable?: boolean;
   isHint?: boolean;
   hintDirection?: string;
   onSwipe: (gestureState: any, tileIndex: number) => void;
 }
 
-const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, size, onTilePress, gameMode, imageUri, tileSize, isMovable, isHint, hintDirection, onSwipe }) => {
+const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, size, onTilePress, gameMode, imageUri, tileSize, isHint, hintDirection, onSwipe }) => {
   const panGesture = useMemo(
     () => Gesture.Pan().runOnJS(true).onEnd((event) => onSwipe(event, index)),
     [index, onSwipe]
@@ -46,7 +45,6 @@ const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, siz
           gameMode={gameMode}
           imageUri={imageUri}
           tileSize={tileSize}
-          isMovable={isMovable}
           isHint={isHint}
           hintDirection={hintDirection}
         />
@@ -67,7 +65,6 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
   const isMoving = useRef(false);
 
   const emptyIndex = findEmptyTile(puzzleState.board);
-  const movableIndices = new Set(getValidMoves(emptyIndex, puzzleState.size));
 
   const handleTilePress = (index: number) => {
     if (puzzleState.isComplete || isMoving.current) return;
@@ -148,8 +145,6 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
 
   const renderTile = (value: number, index: number) => {
     const isHint = hintIndex === index;
-    // Suppress blue movable highlights on all tiles when hint is active — only hint tile should stand out
-    const isMovable = !puzzleState.isComplete && movableIndices.has(index) && hintIndex === null;
     const hintDirection = isHint ? getHintDirection(index, emptyIndex, puzzleState.size) : undefined;
 
     if (value === 0) {
@@ -163,7 +158,6 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
           gameMode={puzzleState.gameMode}
           imageUri={puzzleState.imageUri}
           tileSize={tileSize}
-          isMovable={false}
           isHint={false}
         />
       );
@@ -179,7 +173,6 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
         gameMode={puzzleState.gameMode}
         imageUri={puzzleState.imageUri}
         tileSize={tileSize}
-        isMovable={isMovable}
         isHint={isHint}
         hintDirection={hintDirection}
         onSwipe={handleSwipe}

@@ -51,32 +51,43 @@ const GameControls: React.FC<IGameControlsProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Game Stats */}
+      {/* Win banner */}
       {isComplete && (
-        <View style={styles.completeBadge}>
-          <Text style={styles.completeText}>🎉 Solved!</Text>
-        </View>
+        <TouchableOpacity style={styles.completeBadge} onPress={onShuffle} activeOpacity={0.8}>
+          <Text style={styles.completeText}>🎉 Puzzle Solved!</Text>
+          <Text style={styles.completeSubText}>Tap to play again</Text>
+        </TouchableOpacity>
       )}
 
-      {/* Size Selection */}
-      <View style={styles.sizeContainer}>
-        <Text style={styles.sectionLabel}>Grid Size</Text>
+      {/* Row 1: Mode toggle + Size selector */}
+      <View style={styles.topRow}>
+        <View style={styles.modeButtons}>
+          <TouchableOpacity
+            style={[styles.modeButton, gameMode === 'number' && styles.activeModeButton]}
+            onPress={gameMode !== 'number' ? onModeToggle : undefined}
+          >
+            <Text style={[styles.modeButtonText, gameMode === 'number' && styles.activeModeButtonText]}>
+              🔢
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeButton, gameMode === 'photo' && styles.activeModeButton]}
+            onPress={gameMode !== 'photo' ? onModeToggle : undefined}
+          >
+            <Text style={[styles.modeButtonText, gameMode === 'photo' && styles.activeModeButtonText]}>
+              📷
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.sizeButtons}>
           {sizes.map((size) => (
             <TouchableOpacity
               key={size}
-              style={[
-                styles.sizeButton,
-                currentSize === size && styles.activeSizeButton,
-              ]}
+              style={[styles.sizeButton, currentSize === size && styles.activeSizeButton]}
               onPress={() => onSizeChange(size)}
             >
-              <Text
-                style={[
-                  styles.sizeButtonText,
-                  currentSize === size && styles.activeSizeButtonText,
-                ]}
-              >
+              <Text style={[styles.sizeButtonText, currentSize === size && styles.activeSizeButtonText]}>
                 {size}×{size}
               </Text>
             </TouchableOpacity>
@@ -84,68 +95,37 @@ const GameControls: React.FC<IGameControlsProps> = ({
         </View>
       </View>
 
-      {/* Game Mode Toggle */}
-      <View style={styles.modeContainer}>
-        <Text style={styles.sectionLabel}>Game Mode</Text>
-        <View style={styles.modeButtons}>
-          <TouchableOpacity
-            style={[
-              styles.modeButton,
-              gameMode === 'number' && styles.activeModeButton,
-            ]}
-            onPress={onModeToggle}
-          >
-            <Text
-              style={[
-                styles.modeButtonText,
-                gameMode === 'number' && styles.activeModeButtonText,
-              ]}
-            >
-              Numbers
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.modeButton,
-              gameMode === 'photo' && styles.activeModeButton,
-            ]}
-            onPress={onModeToggle}
-          >
-            <Text
-              style={[
-                styles.modeButtonText,
-                gameMode === 'photo' && styles.activeModeButtonText,
-              ]}
-            >
-              Photo
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Row 2: Pick Image (photo mode only, full-width) */}
+      {gameMode === 'photo' && (
+        <TouchableOpacity style={styles.imageButton} onPress={handleImagePick}>
+          <Text style={styles.imageButtonText}>📷 Pick Image</Text>
+        </TouchableOpacity>
+      )}
 
-      {/* Action Buttons */}
+      {/* Row 3: Always 3 action buttons, consistent size */}
       <View style={styles.actionContainer}>
-        {gameMode === 'photo' && (
-          <TouchableOpacity style={styles.imageButton} onPress={handleImagePick}>
-            <Text style={styles.imageButtonText}>📷 Pick Image</Text>
-          </TouchableOpacity>
-        )}
         <TouchableOpacity
-          style={[styles.hintButton, isComplete && styles.disabledButton]}
+          style={[styles.actionButton, styles.hintButton, isComplete && styles.disabledButton]}
           onPress={onHint}
           disabled={isComplete}
         >
-          <Text style={[styles.hintButtonText, isComplete && styles.disabledButtonText]}>💡 Hint</Text>
+          <Text style={styles.actionIcon}>💡</Text>
+          <Text style={[styles.actionLabel, isComplete && styles.disabledLabel]}>Hint</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.undoButton, !canUndo && styles.disabledButton]}
+          style={[styles.actionButton, styles.undoButton, !canUndo && styles.disabledButton]}
           onPress={onUndo}
           disabled={!canUndo}
         >
-          <Text style={[styles.undoButtonText, !canUndo && styles.disabledButtonText]}>↩️ Undo</Text>
+          <Text style={styles.actionIcon}>↩️</Text>
+          <Text style={[styles.actionLabel, !canUndo && styles.disabledLabel]}>Undo</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.shuffleButton} onPress={onShuffle}>
-          <Text style={styles.shuffleButtonText}>🔀 Shuffle</Text>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.shuffleButton]}
+          onPress={onShuffle}
+        >
+          <Text style={styles.actionIcon}>🔀</Text>
+          <Text style={styles.actionLabel}>Shuffle</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -154,167 +134,139 @@ const GameControls: React.FC<IGameControlsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    alignSelf: 'stretch',
+    marginHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     backgroundColor: '#ffffff',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginBottom: 20,
-    padding: 16,
-    backgroundColor: '#f8fafc',
     borderRadius: 12,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#374151',
+    gap: 12,
   },
   completeBadge: {
     backgroundColor: '#10b981',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    gap: 2,
   },
   completeText: {
     color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  sizeContainer: {
-    marginBottom: 20,
-  },
-  sectionLabel: {
+    fontWeight: '700',
     fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
   },
-  sizeButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  sizeButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-  },
-  activeSizeButton: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
-  },
-  sizeButtonText: {
-    fontSize: 16,
+  completeSubText: {
+    color: '#d1fae5',
+    fontSize: 12,
     fontWeight: '500',
-    color: '#6b7280',
   },
-  activeSizeButtonText: {
-    color: '#ffffff',
-  },
-  modeContainer: {
-    marginBottom: 20,
+
+  /* Row 1 */
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   modeButtons: {
+    flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f1f5f9',
     borderRadius: 8,
-    padding: 4,
+    padding: 3,
   },
   modeButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 7,
     alignItems: 'center',
     borderRadius: 6,
   },
   activeModeButton: {
     backgroundColor: '#ffffff',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   modeButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6b7280',
+    fontSize: 20,
+    color: '#94a3b8',
   },
   activeModeButtonText: {
-    color: '#374151',
+    color: '#1e293b',
   },
-  actionContainer: {
+  sizeButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
+    gap: 6,
   },
-  hintButton: {
-    flex: 1,
-    backgroundColor: '#f59e0b',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+  sizeButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 7,
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
-  hintButtonText: {
+  activeSizeButton: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+  },
+  sizeButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#64748b',
+  },
+  activeSizeButtonText: {
     color: '#ffffff',
-    fontSize: 16,
     fontWeight: '600',
   },
-  undoButton: {
-    flex: 1,
-    backgroundColor: '#64748b',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  undoButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  disabledButton: {
-    opacity: 0.45,
-  },
-  disabledButtonText: {
-    color: '#ffffff',
-  },
-  shuffleButton: {
-    flex: 1,
-    backgroundColor: '#8b5cf6',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  shuffleButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+
+  /* Row 2 */
   imageButton: {
-    flex: 1,
-    backgroundColor: '#06b6d4',
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: '#0ea5e9',
+    paddingVertical: 11,
+    borderRadius: 10,
     alignItems: 'center',
   },
   imageButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
+  },
+
+  /* Row 3 */
+  actionContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 10,
+    alignItems: 'center',
+    gap: 2,
+  },
+  actionIcon: {
+    fontSize: 20,
+  },
+  actionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  hintButton: {
+    backgroundColor: '#f59e0b',
+  },
+  undoButton: {
+    backgroundColor: '#64748b',
+  },
+  shuffleButton: {
+    backgroundColor: '#8b5cf6',
+  },
+  disabledButton: {
+    opacity: 0.35,
+  },
+  disabledLabel: {
+    color: '#ffffff',
   },
 });
 

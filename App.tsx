@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import PuzzleBoard from './src/components/PuzzleBoard';
 import GameControls from './src/components/GameControls';
+import InstructionScreen from './src/components/InstructionScreen';
 import { usePuzzleGame } from './src/hooks/usePuzzleGame';
 import { PuzzleSize } from './types';
 
 export default function App() {
+  const [gameStarted, setGameStarted] = useState(false);
   const {
     puzzleState,
     handleMove,
@@ -19,6 +21,15 @@ export default function App() {
     handleImageSet,
     handleSizeChange,
   } = usePuzzleGame();
+
+  if (!gameStarted) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <StatusBar style="dark" />
+        <InstructionScreen onStart={() => setGameStarted(true)} />
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

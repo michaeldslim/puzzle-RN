@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Puzzle Slide",
-    "slug": "Puzzle Slide",
+    "name": "Slide Puzzle",
+    "slug": "slide-puzzle",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.puzzleRN"
+      "bundleIdentifier": "com.anonymous.slidePuzzle"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,10 +22,19 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.puzzleRN"
+      "package": "com.anonymous.slidePuzzle"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Slide Puzzle to access your photos to set puzzle images.",
+          "cameraPermission": "Allow Slide Puzzle to use your camera to take puzzle photos."
+        }
+      ]
+    ]
   }
 }

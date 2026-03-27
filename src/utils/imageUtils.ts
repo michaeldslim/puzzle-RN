@@ -13,8 +13,8 @@ export const pickImageFromGallery = async (): Promise<string | null> => {
 
     // Launch image picker
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: false, // Skip cropping step
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
       quality: 0.8,
     });
 
@@ -42,9 +42,9 @@ export const takePhoto = async (): Promise<string | null> => {
 
     // Launch camera
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1], // Square aspect ratio for puzzles
+      aspect: [1, 1],
       quality: 0.8,
     });
 

@@ -18,7 +18,6 @@ export interface ITileProps {
   gameMode: 'number' | 'photo';
   imageUri?: string;
   tileSize: number;
-  isMovable?: boolean;
   isHint?: boolean;
   hintDirection?: string;
 }

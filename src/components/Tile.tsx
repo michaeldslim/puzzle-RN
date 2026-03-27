@@ -10,7 +10,6 @@ const Tile: React.FC<ITileProps> = ({
   gameMode,
   imageUri,
   tileSize,
-  isMovable,
   isHint,
   hintDirection,
 }) => {
@@ -64,7 +63,6 @@ const Tile: React.FC<ITileProps> = ({
       style={[
         styles.tile,
         styles.filledTile,
-        isMovable && styles.movableTile,
         isHint && styles.hintTile,
         { width: tileSize, height: tileSize },
       ]}
@@ -109,11 +107,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e5e9',
   },
-  movableTile: {
-    borderColor: '#3b82f6',
-    borderWidth: 2,
-    backgroundColor: '#eff6ff',
-  },
+
   hintTile: {
     borderColor: '#f59e0b',
     borderWidth: 3,
