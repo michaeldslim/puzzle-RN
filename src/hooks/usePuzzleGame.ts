@@ -119,10 +119,28 @@ export const usePuzzleGame = () => {
   const [state, dispatch] = useReducer(puzzleReducer, initialState);
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const cardSoundRef = useRef<Audio.Sound | null>(null);
+
+  const playCardSound = useCallback(async () => {
+    try {
+      if (!cardSoundRef.current) {
+        const { sound } = await Audio.Sound.createAsync(
+          require('../../assets/sounds/card.mp3')
+        );
+        cardSoundRef.current = sound;
+      }
+      await cardSoundRef.current.stopAsync();
+      await cardSoundRef.current.setPositionAsync(0);
+      await cardSoundRef.current.playAsync();
+    } catch (e) {
+      // Sound playback failure is non-critical
+    }
+  }, []);
 
   const handleMove = useCallback((newBoard: number[]) => {
+    playCardSound();
     dispatch({ type: 'MOVE_TILE', payload: newBoard });
-  }, []);
+  }, [playCardSound]);
 
   const handleUndo = useCallback(() => {
     dispatch({ type: 'UNDO' });
@@ -160,6 +178,13 @@ export const usePuzzleGame = () => {
     }, 3000);
   }, [state.board, state.size, state.isComplete]);
 
+  // Preload card sound on mount so first move plays instantly
+  useEffect(() => {
+    Audio.Sound.createAsync(require('../../assets/sounds/card.mp3')).then(({ sound }) => {
+      cardSoundRef.current = sound;
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     return () => {
       if (hintTimeoutRef.current) {
@@ -169,6 +194,10 @@ export const usePuzzleGame = () => {
       if (soundRef.current) {
         soundRef.current.unloadAsync();
         soundRef.current = null;
+      }
+      if (cardSoundRef.current) {
+        cardSoundRef.current.unloadAsync();
+        cardSoundRef.current = null;
       }
     };
   }, []);
