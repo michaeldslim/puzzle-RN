@@ -1,5 +1,6 @@
 import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
+import { Audio } from 'expo-av';
 import { IPuzzleState, IPuzzleAction, PuzzleSize } from '../../types';
 import { shuffleBoard, isSolved, findEmptyTile, getValidMoves, makeMove } from '../utils/puzzleLogic';
 
@@ -117,6 +118,7 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
 export const usePuzzleGame = () => {
   const [state, dispatch] = useReducer(puzzleReducer, initialState);
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
   const getManhattanDistance = useCallback((board: number[], size: number): number => {
     let distance = 0;
@@ -195,7 +197,7 @@ export const usePuzzleGame = () => {
     hintTimeoutRef.current = setTimeout(() => {
       dispatch({ type: 'CLEAR_HINT' });
       hintTimeoutRef.current = null;
-    }, 1800);
+    }, 3000);
   }, [state.board, state.size, state.isComplete, getManhattanDistance]);
 
   useEffect(() => {
@@ -203,6 +205,10 @@ export const usePuzzleGame = () => {
       if (hintTimeoutRef.current) {
         clearTimeout(hintTimeoutRef.current);
         hintTimeoutRef.current = null;
+      }
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+        soundRef.current = null;
       }
     };
   }, []);
@@ -213,9 +219,31 @@ export const usePuzzleGame = () => {
     return Math.floor((endTime - state.startTime) / 1000);
   }, [state.startTime, state.endTime]);
 
-  // Show completion alert
+  // Play tada sound on win
   useEffect(() => {
     if (state.isComplete && state.startTime) {
+      const playWinSound = async () => {
+        try {
+          if (soundRef.current) {
+            await soundRef.current.unloadAsync();
+            soundRef.current = null;
+          }
+          const { sound } = await Audio.Sound.createAsync(
+            require('../../assets/sounds/tada.mp3')
+          );
+          soundRef.current = sound;
+          await sound.playAsync();
+          sound.setOnPlaybackStatusUpdate((status) => {
+            if (status.isLoaded && status.didJustFinish) {
+              sound.unloadAsync();
+              soundRef.current = null;
+            }
+          });
+        } catch (e) {
+          // Sound playback failure is non-critical
+        }
+      };
+      playWinSound();
     }
   }, [state.isComplete, state.startTime, getElapsedTime]);
 

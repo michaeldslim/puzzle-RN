@@ -12,6 +12,7 @@ const Tile: React.FC<ITileProps> = ({
   tileSize,
   isMovable,
   isHint,
+  hintDirection,
 }) => {
   const isEmpty = value === 0;
 
@@ -74,7 +75,7 @@ const Tile: React.FC<ITileProps> = ({
         {gameMode === 'photo' ? renderPhotoTile() : renderNumberTile()}
         {isHint && (
           <View style={styles.hintBadge}>
-            <Text style={styles.hintBadgeText}>💡</Text>
+            <Text style={styles.hintBadgeText}>{hintDirection ?? '💡'}</Text>
           </View>
         )}
       </View>
@@ -134,8 +135,9 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   hintBadgeText: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '700',
+    color: '#f59e0b',
   },
   tileText: {
     fontWeight: '600',

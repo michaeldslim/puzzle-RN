@@ -20,6 +20,7 @@ export interface ITileProps {
   tileSize: number;
   isMovable?: boolean;
   isHint?: boolean;
+  hintDirection?: string;
 }
 
 export interface IPuzzleAction {

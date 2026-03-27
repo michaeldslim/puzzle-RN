@@ -26,10 +26,11 @@ interface IGestureTileProps {
   tileSize: number;
   isMovable?: boolean;
   isHint?: boolean;
+  hintDirection?: string;
   onSwipe: (gestureState: any, tileIndex: number) => void;
 }
 
-const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, size, onTilePress, gameMode, imageUri, tileSize, isMovable, isHint, onSwipe }) => {
+const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, size, onTilePress, gameMode, imageUri, tileSize, isMovable, isHint, hintDirection, onSwipe }) => {
   const panGesture = useMemo(
     () => Gesture.Pan().runOnJS(true).onEnd((event) => onSwipe(event, index)),
     [index, onSwipe]
@@ -47,6 +48,7 @@ const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, siz
           tileSize={tileSize}
           isMovable={isMovable}
           isHint={isHint}
+          hintDirection={hintDirection}
         />
       </View>
     </GestureDetector>
@@ -136,9 +138,20 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
     }
   }, [puzzleState, onMove, isMoving]);
 
+  const getHintDirection = (hintIdx: number, emptyIdx: number, size: number): string => {
+    if (emptyIdx === hintIdx - 1) return '←';
+    if (emptyIdx === hintIdx + 1) return '→';
+    if (emptyIdx === hintIdx - size) return '↑';
+    if (emptyIdx === hintIdx + size) return '↓';
+    return '💡';
+  };
+
   const renderTile = (value: number, index: number) => {
-    const isMovable = !puzzleState.isComplete && movableIndices.has(index);
     const isHint = hintIndex === index;
+    // Suppress blue movable highlights on all tiles when hint is active — only hint tile should stand out
+    const isMovable = !puzzleState.isComplete && movableIndices.has(index) && hintIndex === null;
+    const hintDirection = isHint ? getHintDirection(index, emptyIndex, puzzleState.size) : undefined;
+
     if (value === 0) {
       return (
         <Tile
@@ -168,6 +181,7 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
         tileSize={tileSize}
         isMovable={isMovable}
         isHint={isHint}
+        hintDirection={hintDirection}
         onSwipe={handleSwipe}
       />
     );
