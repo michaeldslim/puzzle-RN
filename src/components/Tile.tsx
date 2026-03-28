@@ -14,6 +14,14 @@ const Tile: React.FC<ITileProps> = ({
   hintDirection,
 }) => {
   const isEmpty = value === 0;
+  const hintStep = Number(hintDirection);
+  const hintStepStyle = Number.isFinite(hintStep)
+    ? hintStep === 1
+      ? styles.hintBadgeStep1
+      : hintStep === 2
+        ? styles.hintBadgeStep2
+        : styles.hintBadgeStep3
+    : styles.hintBadgeDefault;
 
   const renderNumberTile = () => (
     <Text style={[styles.tileText, { fontSize: tileSize * 0.3 }]}>
@@ -72,8 +80,8 @@ const Tile: React.FC<ITileProps> = ({
       <View style={styles.tileContent}>
         {gameMode === 'photo' ? renderPhotoTile() : renderNumberTile()}
         {isHint && (
-          <View style={styles.hintBadge}>
-            <Text style={styles.hintBadgeText}>{hintDirection ?? '💡'}</Text>
+          <View style={[styles.hintBadge, hintStepStyle]}>
+            <Text style={styles.hintBadgeText}>{hintDirection ?? '1'}</Text>
           </View>
         )}
       </View>
@@ -121,17 +129,41 @@ const styles = StyleSheet.create({
   },
   hintBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#ffffff',
+    top: 3,
+    right: 3,
+    minWidth: 26,
+    height: 26,
     borderRadius: 999,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  hintBadgeDefault: {
+    backgroundColor: '#fef3c7',
+    borderColor: '#f59e0b',
+  },
+  hintBadgeStep1: {
+    backgroundColor: '#fee2e2',
+    borderColor: '#ef4444',
+  },
+  hintBadgeStep2: {
+    backgroundColor: '#fed7aa',
+    borderColor: '#f97316',
+  },
+  hintBadgeStep3: {
+    backgroundColor: '#fef3c7',
+    borderColor: '#f59e0b',
   },
   hintBadgeText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#f59e0b',
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#111827',
+    lineHeight: 16,
   },
   tileText: {
     fontWeight: '600',

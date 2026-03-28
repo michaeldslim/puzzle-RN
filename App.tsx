@@ -40,6 +40,7 @@ export default function App() {
               puzzleState={puzzleState}
               onMove={handleMove}
               hintIndex={puzzleState.hintIndex}
+              hintSequence={puzzleState.hintSequence}
             />
             <GameControls
               currentSize={puzzleState.size as PuzzleSize}

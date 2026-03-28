@@ -8,6 +8,7 @@ export interface IPuzzleState {
   imageUri?: string;
   history: number[][];
   hintIndex: number | null;
+  hintSequence: number[];
 }
 
 export interface ITileProps {

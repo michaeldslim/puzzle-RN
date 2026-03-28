@@ -111,16 +111,18 @@ const GameControls: React.FC<IGameControlsProps> = ({
         </View>
       )}
 
-      {/* Row 3: Always 3 action buttons, consistent size */}
+      {/* Row 3: Hint shown only for 3x3 */}
       <View style={styles.actionContainer}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.hintButton, isComplete && styles.disabledButton]}
-          onPress={onHint}
-          disabled={isComplete}
-        >
-          <Text style={styles.actionIcon}>💡</Text>
-          <Text style={[styles.actionLabel, isComplete && styles.disabledLabel]}>Hint</Text>
-        </TouchableOpacity>
+        {currentSize === 3 && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.hintButton, isComplete && styles.disabledButton]}
+            onPress={onHint}
+            disabled={isComplete}
+          >
+            <Text style={styles.actionIcon}>💡</Text>
+            <Text style={[styles.actionLabel, isComplete && styles.disabledLabel]}>Hint</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={[styles.actionButton, styles.undoButton, !canUndo && styles.disabledButton]}
           onPress={onUndo}

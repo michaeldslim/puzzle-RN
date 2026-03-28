@@ -184,53 +184,90 @@ export const getManhattanDistance = (board: number[], size: number): number => {
   return distance;
 };
 
-/**
- * Depth-limited DFS lookahead that returns the first move of the best
- * path found within maxDepth steps. Avoids undo cycles by tracking
- * visited states per path (with backtracking).
- */
-export const findBestHintMove = (board: number[], size: number, maxDepth: number = 8): number | null => {
+const serializeBoard = (board: number[]): string => board.join(',');
+
+const findHintMoveSequence3x3 = (
+  board: number[],
+  excludedFirstMove: number | null = null,
+  maxMoves: number = 3
+): number[] => {
+  if (isSolved(board)) return [];
+
+  const size = 3;
   const initialEmpty = findEmptyTile(board);
-  const firstMoves = getValidMoves(initialEmpty, size);
-  if (firstMoves.length === 0) return null;
+  const firstMoves = getValidMoves(initialEmpty, size).filter((move) => move !== excludedFirstMove);
+  if (firstMoves.length === 0) return [];
 
-  let bestScore = Number.POSITIVE_INFINITY;
-  let bestFirstMove: number = firstMoves[0];
-  const visited = new Set<string>();
-
-  const dfs = (
-    b: number[],
-    emptyIdx: number,
-    depth: number,
-    firstMove: number,
-    prevEmpty: number
-  ): void => {
-    const score = getManhattanDistance(b, size);
-    if (score < bestScore) {
-      bestScore = score;
-      bestFirstMove = firstMove;
-    }
-    if (score === 0 || depth >= maxDepth) return;
-
-    for (const move of getValidMoves(emptyIdx, size)) {
-      if (move === prevEmpty) continue; // skip immediate undo
-      const next = makeMove(b, move);
-      const key = next.join(',');
-      if (!visited.has(key)) {
-        visited.add(key);
-        dfs(next, move, depth + 1, firstMove, emptyIdx);
-        visited.delete(key); // backtrack so sibling paths can visit same state
-      }
-    }
-  };
+  const visited = new Set<string>([serializeBoard(board)]);
+  const queue: Array<{
+    board: number[];
+    emptyIdx: number;
+    path: number[];
+  }> = [];
 
   for (const firstMove of firstMoves) {
-    const next = makeMove(board, firstMove);
-    const key = next.join(',');
+    const nextBoard = makeMove(board, firstMove);
+    const key = serializeBoard(nextBoard);
+    if (visited.has(key)) continue;
+
+    if (isSolved(nextBoard)) return [firstMove].slice(0, maxMoves);
+
     visited.add(key);
-    dfs(next, firstMove, 1, firstMove, initialEmpty);
-    visited.delete(key);
+    queue.push({
+      board: nextBoard,
+      emptyIdx: firstMove,
+      path: [firstMove],
+    });
   }
 
-  return bestFirstMove;
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) break;
+
+    for (const move of getValidMoves(current.emptyIdx, size)) {
+      const nextBoard = makeMove(current.board, move);
+      const key = serializeBoard(nextBoard);
+      if (visited.has(key)) continue;
+
+      const nextPath = [...current.path, move];
+      if (isSolved(nextBoard)) return nextPath.slice(0, maxMoves);
+
+      visited.add(key);
+      queue.push({
+        board: nextBoard,
+        emptyIdx: move,
+        path: nextPath,
+      });
+    }
+  }
+
+  return [];
+};
+
+const findBestHintMove3x3 = (board: number[], excludedFirstMove: number | null = null): number | null => {
+  const sequence = findHintMoveSequence3x3(board, excludedFirstMove, 1);
+  return sequence.length > 0 ? sequence[0] : null;
+};
+
+export const findHintMoveSequence = (
+  board: number[],
+  size: number,
+  excludedFirstMove: number | null = null,
+  maxMoves: number = 3
+): number[] => {
+  if (size !== 3) return [];
+  return findHintMoveSequence3x3(board, excludedFirstMove, maxMoves);
+};
+
+/**
+ * Returns the optimal next move for 3x3 boards.
+ * For non-3x3 boards, hint is intentionally unsupported.
+ */
+export const findBestHintMove = (
+  board: number[],
+  size: number,
+  excludedFirstMove: number | null = null
+): number | null => {
+  if (size !== 3) return null;
+  return findBestHintMove3x3(board, excludedFirstMove);
 };

@@ -14,6 +14,7 @@ interface IPuzzleBoardProps {
   puzzleState: IPuzzleState;
   onMove: (newBoard: number[]) => void;
   hintIndex: number | null;
+  hintSequence?: number[];
 }
 
 interface IGestureTileProps {
@@ -53,7 +54,7 @@ const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, siz
   );
 });
 
-const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintIndex }) => {
+const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintIndex, hintSequence = [] }) => {
   const screenWidth = Dimensions.get('window').width;
   const boardSize = Math.min(screenWidth - 40, 400);
   // Adjust tile size calculation to account for margins and padding
@@ -135,17 +136,10 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
     }
   }, [puzzleState, onMove, isMoving]);
 
-  const getHintDirection = (hintIdx: number, emptyIdx: number, size: number): string => {
-    if (emptyIdx === hintIdx - 1) return '←';
-    if (emptyIdx === hintIdx + 1) return '→';
-    if (emptyIdx === hintIdx - size) return '↑';
-    if (emptyIdx === hintIdx + size) return '↓';
-    return '💡';
-  };
-
   const renderTile = (value: number, index: number) => {
-    const isHint = hintIndex === index;
-    const hintDirection = isHint ? getHintDirection(index, emptyIndex, puzzleState.size) : undefined;
+    const stepIndex = hintSequence.indexOf(index);
+    const isHint = stepIndex !== -1 || hintIndex === index;
+    const hintDirection = stepIndex !== -1 ? String(stepIndex + 1) : (isHint ? '1' : undefined);
 
     if (value === 0) {
       return (

@@ -2,7 +2,7 @@ import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import { IPuzzleState, IPuzzleAction, PuzzleSize } from '../../types';
-import { shuffleBoard, isSolved, findEmptyTile, findBestHintMove } from '../utils/puzzleLogic';
+import { shuffleBoard, isSolved, findEmptyTile, findHintMoveSequence } from '../utils/puzzleLogic';
 
 const initialState: IPuzzleState = {
   board: shuffleBoard(3),
@@ -14,6 +14,7 @@ const initialState: IPuzzleState = {
   imageUri: undefined,
   history: [],
   hintIndex: null,
+  hintSequence: [],
 };
 
 const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState => {
@@ -30,6 +31,7 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
         endTime: isGameComplete ? Date.now() : null,
         startTime: state.startTime || Date.now(),
         hintIndex: null,
+        hintSequence: [],
       };
 
     case 'SHUFFLE':
@@ -41,6 +43,7 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
         isComplete: false,
         history: [],
         hintIndex: null,
+        hintSequence: [],
       };
 
     case 'SET_SIZE':
@@ -54,6 +57,7 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
         isComplete: false,
         history: [],
         hintIndex: null,
+        hintSequence: [],
       };
 
     case 'RESET_TIMER':
@@ -95,19 +99,34 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
         isComplete: complete,
         endTime: complete ? (state.endTime || Date.now()) : null,
         hintIndex: null,
+        hintSequence: [],
       };
     }
 
-    case 'SHOW_HINT':
+    case 'SHOW_HINT': {
+      const payload = action.payload;
+      if (typeof payload === 'number') {
+        return {
+          ...state,
+          hintIndex: payload,
+          hintSequence: payload === null ? [] : [payload],
+        };
+      }
+
+      const sequence = Array.isArray(payload?.sequence) ? payload.sequence : [];
+      const index = typeof payload?.index === 'number' ? payload.index : (sequence[0] ?? null);
       return {
         ...state,
-        hintIndex: action.payload,
+        hintIndex: index,
+        hintSequence: sequence,
       };
+    }
 
     case 'CLEAR_HINT':
       return {
         ...state,
         hintIndex: null,
+        hintSequence: [],
       };
 
     default:
@@ -164,10 +183,18 @@ export const usePuzzleGame = () => {
   }, []);
 
   const handleHint = useCallback(() => {
-    if (state.isComplete) return;
-    const hintTileIndex = findBestHintMove(state.board, state.size);
-    if (hintTileIndex === null) return;
-    dispatch({ type: 'SHOW_HINT', payload: hintTileIndex });
+    if (state.isComplete || state.size !== 3) return;
+    const previousBoard = state.history.length > 0 ? state.history[state.history.length - 1] : null;
+    const excludedReverseMove = previousBoard ? findEmptyTile(previousBoard) : null;
+    const hintSequence = findHintMoveSequence(state.board, state.size, excludedReverseMove, 3);
+    if (hintSequence.length === 0) return;
+    dispatch({
+      type: 'SHOW_HINT',
+      payload: {
+        index: hintSequence[0],
+        sequence: hintSequence,
+      },
+    });
     if (hintTimeoutRef.current) {
       clearTimeout(hintTimeoutRef.current);
       hintTimeoutRef.current = null;
