@@ -139,25 +139,38 @@ export const usePuzzleGame = () => {
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const cardSoundRef = useRef<Audio.Sound | null>(null);
+  const cardSoundLoadingRef = useRef<Promise<void> | null>(null);
+
+  const ensureCardSoundReady = useCallback(async () => {
+    if (cardSoundRef.current) return;
+
+    if (!cardSoundLoadingRef.current) {
+      cardSoundLoadingRef.current = Audio.Sound.createAsync(
+        require('../../assets/sounds/card.mp3')
+      )
+        .then(({ sound }) => {
+          cardSoundRef.current = sound;
+        })
+        .finally(() => {
+          cardSoundLoadingRef.current = null;
+        });
+    }
+
+    await cardSoundLoadingRef.current;
+  }, []);
 
   const playCardSound = useCallback(async () => {
     try {
-      if (!cardSoundRef.current) {
-        const { sound } = await Audio.Sound.createAsync(
-          require('../../assets/sounds/card.mp3')
-        );
-        cardSoundRef.current = sound;
-      }
-      await cardSoundRef.current.stopAsync();
-      await cardSoundRef.current.setPositionAsync(0);
-      await cardSoundRef.current.playAsync();
+      await ensureCardSoundReady();
+      if (!cardSoundRef.current) return;
+      await cardSoundRef.current.replayAsync();
     } catch (e) {
       // Sound playback failure is non-critical
     }
-  }, []);
+  }, [ensureCardSoundReady]);
 
   const handleMove = useCallback((newBoard: number[]) => {
-    playCardSound();
+    void playCardSound();
     dispatch({ type: 'MOVE_TILE', payload: newBoard });
   }, [playCardSound]);
 
@@ -207,10 +220,16 @@ export const usePuzzleGame = () => {
 
   // Preload card sound on mount so first move plays instantly
   useEffect(() => {
-    Audio.Sound.createAsync(require('../../assets/sounds/card.mp3')).then(({ sound }) => {
-      cardSoundRef.current = sound;
+    Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
     }).catch(() => {});
-  }, []);
+
+    ensureCardSoundReady().catch(() => {});
+  }, [ensureCardSoundReady]);
 
   useEffect(() => {
     return () => {
