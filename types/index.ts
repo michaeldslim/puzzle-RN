@@ -21,6 +21,7 @@ export interface ITileProps {
   tileSize: number;
   isHint?: boolean;
   hintDirection?: string;
+  isInvalidPress?: boolean;
 }
 
 export interface IPuzzleAction {

@@ -12,6 +12,7 @@ const Tile: React.FC<ITileProps> = ({
   tileSize,
   isHint,
   hintDirection,
+  isInvalidPress,
 }) => {
   const isEmpty = value === 0;
   const hintStep = Number(hintDirection);
@@ -72,6 +73,7 @@ const Tile: React.FC<ITileProps> = ({
         styles.tile,
         styles.filledTile,
         isHint && styles.hintTile,
+        isInvalidPress && styles.invalidPressedTile,
         { width: tileSize, height: tileSize },
       ]}
       onPress={() => onTilePress(index)}
@@ -120,6 +122,11 @@ const styles = StyleSheet.create({
     borderColor: '#f59e0b',
     borderWidth: 3,
     backgroundColor: '#fffbeb',
+  },
+  invalidPressedTile: {
+    borderColor: '#fca5a5',
+    borderWidth: 3,
+    backgroundColor: '#fef2f2',
   },
   tileContent: {
     width: '100%',

@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useMemo } from 'react';
+import React, { useRef, useCallback, useMemo, useState, useEffect } from 'react';
 import { View, StyleSheet, Dimensions, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Tile from './Tile';
@@ -27,10 +27,11 @@ interface IGestureTileProps {
   tileSize: number;
   isHint?: boolean;
   hintDirection?: string;
+  isInvalidPress?: boolean;
   onSwipe: (gestureState: any, tileIndex: number) => void;
 }
 
-const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, size, onTilePress, gameMode, imageUri, tileSize, isHint, hintDirection, onSwipe }) => {
+const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, size, onTilePress, gameMode, imageUri, tileSize, isHint, hintDirection, isInvalidPress, onSwipe }) => {
   const panGesture = useMemo(
     () => Gesture.Pan().runOnJS(true).onEnd((event) => onSwipe(event, index)),
     [index, onSwipe]
@@ -48,6 +49,7 @@ const GestureTile: React.FC<IGestureTileProps> = React.memo(({ value, index, siz
           tileSize={tileSize}
           isHint={isHint}
           hintDirection={hintDirection}
+          isInvalidPress={isInvalidPress}
         />
       </View>
     </GestureDetector>
@@ -64,6 +66,8 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
   const tileSize = (availableSpace - (puzzleState.size - 1) * tilePadding) / puzzleState.size;
 
   const isMoving = useRef(false);
+  const invalidPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [invalidPressedIndex, setInvalidPressedIndex] = useState<number | null>(null);
 
   const emptyIndex = findEmptyTile(puzzleState.board);
 
@@ -84,8 +88,25 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
       } finally {
         setTimeout(() => { isMoving.current = false; }, 350);
       }
+    } else {
+      setInvalidPressedIndex(index);
+      if (invalidPressTimeoutRef.current) {
+        clearTimeout(invalidPressTimeoutRef.current);
+      }
+      invalidPressTimeoutRef.current = setTimeout(() => {
+        setInvalidPressedIndex(null);
+        invalidPressTimeoutRef.current = null;
+      }, 220);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (invalidPressTimeoutRef.current) {
+        clearTimeout(invalidPressTimeoutRef.current);
+      }
+    };
+  }, []);
 
 
   const handleSwipe = useCallback((gestureState: any, tileIndex: number) => {
@@ -140,6 +161,7 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
     const stepIndex = hintSequence.indexOf(index);
     const isHint = stepIndex !== -1 || hintIndex === index;
     const hintDirection = stepIndex !== -1 ? String(stepIndex + 1) : (isHint ? '1' : undefined);
+    const isInvalidPress = invalidPressedIndex === index;
 
     if (value === 0) {
       return (
@@ -153,6 +175,7 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
           imageUri={puzzleState.imageUri}
           tileSize={tileSize}
           isHint={false}
+          isInvalidPress={false}
         />
       );
     }
@@ -169,6 +192,7 @@ const PuzzleBoard: React.FC<IPuzzleBoardProps> = ({ puzzleState, onMove, hintInd
         tileSize={tileSize}
         isHint={isHint}
         hintDirection={hintDirection}
+        isInvalidPress={isInvalidPress}
         onSwipe={handleSwipe}
       />
     );
