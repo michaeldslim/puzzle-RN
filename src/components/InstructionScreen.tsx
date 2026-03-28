@@ -209,6 +209,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
     borderRadius: 14,
     paddingVertical: 16,
+    marginBottom: 24,
     alignItems: 'center',
     shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 4 },
