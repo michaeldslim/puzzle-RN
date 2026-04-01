@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Slide Puzzle",
-    "slug": "slide-puzzle",
+    "slug": "slidepuzzle",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.slidePuzzle"
+      "bundleIdentifier": "com.mike008.slidepuzzle"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.slidePuzzle"
+      "package": "com.mike008.slidepuzzle"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,6 +35,16 @@
           "cameraPermission": "Allow Slide Puzzle to use your camera to take puzzle photos."
         }
       ]
-    ]
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/6e9cf9b7-1358-4145-b09c-cf7c1a694f9c"
+    },
+    "runtimeVersion": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "6e9cf9b7-1358-4145-b09c-cf7c1a694f9c"
+      }
+    },
+    "owner": "mike008"
   }
 }

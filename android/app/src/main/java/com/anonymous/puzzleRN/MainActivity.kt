@@ -1,4 +1,4 @@
-package com.anonymous.puzzleRN
+package com.mike008.slidepuzzle
 
 import android.os.Build
 import android.os.Bundle
