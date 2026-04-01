@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, ScrollView, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import PuzzleBoard from './src/components/PuzzleBoard';
 import GameControls from './src/components/GameControls';
 import InstructionScreen from './src/components/InstructionScreen';
+import Fireworks from './src/components/Fireworks';
 import { usePuzzleGame } from './src/hooks/usePuzzleGame';
 import { PuzzleSize } from './types';
 
 export default function App() {
   const [gameStarted, setGameStarted] = useState(false);
+  const [showFireworks, setShowFireworks] = useState(false);
+  const prevIsComplete = useRef(false);
   const {
     puzzleState,
     handleMove,
@@ -21,6 +24,13 @@ export default function App() {
     handleImageSet,
     handleSizeChange,
   } = usePuzzleGame();
+
+  useEffect(() => {
+    if (puzzleState.isComplete && !prevIsComplete.current) {
+      setShowFireworks(true);
+    }
+    prevIsComplete.current = puzzleState.isComplete;
+  }, [puzzleState.isComplete]);
 
   if (!gameStarted) {
     return (
@@ -58,6 +68,9 @@ export default function App() {
           </View>
         </ScrollView>
       </SafeAreaView>
+      {showFireworks && (
+        <Fireworks onDone={() => setShowFireworks(false)} />
+      )}
     </GestureHandlerRootView>
   );
 }
