@@ -6,8 +6,6 @@ import { shuffleBoard, isSolved, findEmptyTile, findHintMoveSequence } from '../
 const initialState: IPuzzleState = {
   board: shuffleBoard(3),
   size: 3,
-  startTime: null,
-  endTime: null,
   isComplete: false,
   gameMode: 'number',
   imageUri: undefined,
@@ -27,8 +25,6 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
         history: [...state.history, state.board],
         board: newBoard,
         isComplete: isGameComplete,
-        endTime: isGameComplete ? Date.now() : null,
-        startTime: state.startTime || Date.now(),
         hintIndex: null,
         hintSequence: [],
       };
@@ -37,8 +33,6 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
       return {
         ...state,
         board: shuffleBoard(state.size),
-        startTime: null,
-        endTime: null,
         isComplete: false,
         history: [],
         hintIndex: null,
@@ -51,26 +45,16 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
         ...state,
         size: newSize,
         board: shuffleBoard(newSize),
-        startTime: null,
-        endTime: null,
         isComplete: false,
         history: [],
         hintIndex: null,
         hintSequence: [],
       };
 
-    case 'RESET_TIMER':
-      return {
-        ...state,
-        startTime: Date.now(),
-        endTime: null,
-      };
-
     case 'SET_COMPLETE':
       return {
         ...state,
         isComplete: action.payload,
-        endTime: action.payload ? Date.now() : null,
       };
 
     case 'SET_MODE':
@@ -96,7 +80,6 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
         board: previousBoard,
         history: nextHistory,
         isComplete: complete,
-        endTime: complete ? (state.endTime || Date.now()) : null,
         hintIndex: null,
         hintSequence: [],
       };
@@ -228,15 +211,9 @@ export const usePuzzleGame = () => {
     };
   }, []);
 
-  const getElapsedTime = useCallback((): number => {
-    if (!state.startTime) return 0;
-    const endTime = state.endTime || Date.now();
-    return Math.floor((endTime - state.startTime) / 1000);
-  }, [state.startTime, state.endTime]);
-
   // Play tada sound on win
   useEffect(() => {
-    if (state.isComplete && state.startTime) {
+    if (state.isComplete) {
       const playWinSound = async () => {
         try {
           if (soundRef.current) {
@@ -260,7 +237,7 @@ export const usePuzzleGame = () => {
       };
       playWinSound();
     }
-  }, [state.isComplete, state.startTime]);
+  }, [state.isComplete]);
 
   return {
     puzzleState: state,
@@ -272,6 +249,5 @@ export const usePuzzleGame = () => {
     handleSizeChange,
     handleModeToggle,
     handleImageSet,
-    getElapsedTime,
   };
 };

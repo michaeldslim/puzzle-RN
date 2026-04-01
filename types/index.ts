@@ -1,8 +1,6 @@
 export interface IPuzzleState {
   board: number[];
   size: number;
-  startTime: number | null;
-  endTime: number | null;
   isComplete: boolean;
   gameMode: 'number' | 'photo';
   imageUri?: string;
@@ -25,7 +23,7 @@ export interface ITileProps {
 }
 
 export interface IPuzzleAction {
-  type: 'MOVE_TILE' | 'SHUFFLE' | 'SET_SIZE' | 'RESET_TIMER' | 'SET_COMPLETE' | 'SET_MODE' | 'SET_IMAGE' | 'UNDO' | 'SHOW_HINT' | 'CLEAR_HINT';
+  type: 'MOVE_TILE' | 'SHUFFLE' | 'SET_SIZE' | 'SET_COMPLETE' | 'SET_MODE' | 'SET_IMAGE' | 'UNDO' | 'SHOW_HINT' | 'CLEAR_HINT';
   payload?: any;
 }
 
