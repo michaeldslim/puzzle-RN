@@ -126,7 +126,7 @@ export const usePuzzleGame = () => {
     try {
       if (!cardSoundRef.current) {
         const { sound } = await Audio.Sound.createAsync(
-          require('../../assets/sounds/card.mp3')
+          require('../../assets/sounds/swoosh.mp3')
         );
         cardSoundRef.current = sound;
       }
@@ -189,7 +189,7 @@ export const usePuzzleGame = () => {
 
   // Preload card sound on mount so first move plays instantly
   useEffect(() => {
-    Audio.Sound.createAsync(require('../../assets/sounds/card.mp3')).then(({ sound }) => {
+    Audio.Sound.createAsync(require('../../assets/sounds/swoosh.mp3')).then(({ sound }) => {
       cardSoundRef.current = sound;
     }).catch(() => {});
   }, []);

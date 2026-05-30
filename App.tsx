@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, ScrollView, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Audio } from 'expo-av';
 import PuzzleBoard from './src/components/PuzzleBoard';
 import GameControls from './src/components/GameControls';
 import InstructionScreen from './src/components/InstructionScreen';
@@ -13,6 +14,7 @@ export default function App() {
   const [gameStarted, setGameStarted] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
   const prevIsComplete = useRef(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
   const {
     puzzleState,
     handleMove,
@@ -31,6 +33,48 @@ export default function App() {
     }
     prevIsComplete.current = puzzleState.isComplete;
   }, [puzzleState.isComplete]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadAndPlay = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+        });
+
+        const { sound } = await Audio.Sound.createAsync(
+          require('./assets/sounds/bm.mp3'),
+          { shouldPlay: true, isLooping: true, volume: 0.2 }
+        );
+
+        if (mounted) soundRef.current = sound;
+      } catch (e) {
+        console.warn('Failed to load or play background music', e);
+      }
+    };
+
+    if (gameStarted) {
+      loadAndPlay();
+    }
+
+    return () => {
+      mounted = false;
+      const cleanup = async () => {
+        if (soundRef.current) {
+          try {
+            await soundRef.current.stopAsync();
+            await soundRef.current.unloadAsync();
+          } catch (e) {
+            // ignore cleanup errors
+          }
+          soundRef.current = null;
+        }
+      };
+      void cleanup();
+    };
+  }, [gameStarted]);
 
   if (!gameStarted) {
     return (
