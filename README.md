@@ -51,40 +51,6 @@ npm run ios
 5. **Solve the Puzzle**: Arrange tiles in order (1-8 for 3×3, 1-15 for 4×4, etc.)
 6. **Track Progress**: Monitor your moves and time in the stats panel
 
-## Technical Implementation
-
-### Core Architecture
-
-- **State Management**: Custom hook with useReducer for game state
-- **Game Logic**: Solvable puzzle generation using inversion counting
-- **UI Components**: Modular TypeScript components with ShadCN-inspired design
-- **Animations**: React Native LayoutAnimation for smooth transitions
-- **Gestures**: react-native-gesture-handler for swipe detection
-
-### Key Components
-
-- `PuzzleBoard`: Main game board with tile rendering and gesture handling
-- `Tile`: Individual puzzle piece with number/photo display
-- `GameControls`: Size selection, mode toggle, and game statistics
-- `usePuzzleGame`: Custom hook managing game state and logic
-
-### File Structure
-
-```
-src/
-├── components/
-│   ├── PuzzleBoard.tsx    # Main game board
-│   ├── Tile.tsx           # Individual puzzle tile
-│   └── GameControls.tsx   # Game controls and stats
-├── hooks/
-│   └── usePuzzleGame.ts   # Game state management
-├── utils/
-│   ├── puzzleLogic.ts     # Core game logic
-│   └── imageUtils.ts      # Image picker utilities
-types/
-└── index.ts               # TypeScript interfaces
-```
-
 ## Dependencies
 
 - **expo**: ~53.0.22
