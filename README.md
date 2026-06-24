@@ -51,23 +51,6 @@ npm run ios
 5. **Solve the Puzzle**: Arrange tiles in order (1-8 for 3×3, 1-15 for 4×4, etc.)
 6. **Track Progress**: Monitor your moves and time in the stats panel
 
-## Dependencies
-
-- **expo**: ~53.0.22
-- **react-native**: 0.79.6
-- **react-native-gesture-handler**: For swipe gestures
-- **react-native-reanimated**: Animation support
-- **expo-image-picker**: Camera and gallery access
-- **expo-image-manipulator**: Image processing
-
-## Development
-
-The project follows TypeScript best practices with:
-- Interface definitions with 'I' prefix
-- Comprehensive type safety
-- Modular component architecture
-- Clean separation of concerns
-
 ## Future Enhancements
 
 - Undo/Redo functionality
