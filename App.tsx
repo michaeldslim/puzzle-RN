@@ -12,6 +12,7 @@ import { PuzzleSize } from './types';
 
 export default function App() {
   const [gameStarted, setGameStarted] = useState(false);
+  const [musicEnabled, setMusicEnabled] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
   const prevIsComplete = useRef(false);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -37,6 +38,18 @@ export default function App() {
   useEffect(() => {
     let mounted = true;
 
+    const stopMusic = async () => {
+      if (soundRef.current) {
+        try {
+          await soundRef.current.stopAsync();
+          await soundRef.current.unloadAsync();
+        } catch (e) {
+          // ignore cleanup errors
+        }
+        soundRef.current = null;
+      }
+    };
+
     const loadAndPlay = async () => {
       try {
         await Audio.setAudioModeAsync({
@@ -45,7 +58,7 @@ export default function App() {
         });
 
         const { sound } = await Audio.Sound.createAsync(
-          require('./assets/sounds/bm.mp3'),
+          require('./assets/sounds/bm-slide.mp3'),
           { shouldPlay: true, isLooping: true, volume: 0.2 }
         );
 
@@ -55,32 +68,27 @@ export default function App() {
       }
     };
 
-    if (gameStarted) {
-      loadAndPlay();
+    if (musicEnabled) {
+      void loadAndPlay();
+    } else {
+      void stopMusic();
     }
 
     return () => {
       mounted = false;
-      const cleanup = async () => {
-        if (soundRef.current) {
-          try {
-            await soundRef.current.stopAsync();
-            await soundRef.current.unloadAsync();
-          } catch (e) {
-            // ignore cleanup errors
-          }
-          soundRef.current = null;
-        }
-      };
-      void cleanup();
+      void stopMusic();
     };
-  }, [gameStarted]);
+  }, [musicEnabled]);
 
   if (!gameStarted) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <StatusBar style="dark" />
-        <InstructionScreen onStart={() => setGameStarted(true)} />
+        <InstructionScreen
+          onStart={() => setGameStarted(true)}
+          musicEnabled={musicEnabled}
+          onMusicToggle={setMusicEnabled}
+        />
       </GestureHandlerRootView>
     );
   }

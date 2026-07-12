@@ -6,13 +6,20 @@ import {
   StyleSheet,
   SafeAreaView,
   Image,
+  Switch,
 } from 'react-native';
 
 interface IInstructionScreenProps {
   onStart: () => void;
+  musicEnabled: boolean;
+  onMusicToggle: (enabled: boolean) => void;
 }
 
-const InstructionScreen: React.FC<IInstructionScreenProps> = ({ onStart }) => {
+const InstructionScreen: React.FC<IInstructionScreenProps> = ({
+  onStart,
+  musicEnabled,
+  onMusicToggle,
+}) => {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -21,6 +28,18 @@ const InstructionScreen: React.FC<IInstructionScreenProps> = ({ onStart }) => {
           <Image source={require('../../assets/icon.png')} style={styles.appIcon} />
           <Text style={styles.subtitle}>Slide Puzzle</Text>
           <Text style={styles.title}>Puzzle Game</Text>
+        </View>
+
+        {/* Background music toggle */}
+        <View style={styles.musicRow}>
+          <Text style={styles.musicLabel}>🎵 Background Music</Text>
+          <Switch
+            value={musicEnabled}
+            onValueChange={onMusicToggle}
+            trackColor={{ false: '#e2e8f0', true: '#93c5fd' }}
+            thumbColor={musicEnabled ? '#3b82f6' : '#f8fafc'}
+            ios_backgroundColor="#e2e8f0"
+          />
         </View>
 
         {/* Start button */}
@@ -66,6 +85,23 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     color: '#1e293b',
+  },
+  musicRow: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  musicLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#334155',
   },
   startBtn: {
     alignSelf: 'stretch',
