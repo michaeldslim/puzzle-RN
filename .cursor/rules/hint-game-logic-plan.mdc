@@ -6,16 +6,16 @@ alwaysApply: false
 
 # Hint & Game Logic Improvement Plan
 
-## Status (updated)
+## Status
 
 | Phase | Status | Notes |
 |-------|--------|-------|
 | 1 — IDA\* solver | **Done** | Replaced BFS; uses `getManhattanDistance` |
 | 2 — Async hint computation | **Done** | `InteractionManager` + `hintLoading` state |
 | 3 — Exclusion logic fix | **Done** | `getHintFirstMoves()` + `state.history` in deps |
-| 4 — Empty-hint feedback | Pending | Still silent when sequence is `[]` |
-| 5 — Unit tests | Pending | No test file yet |
-| 6 — 4×4 / 5×5 hints | Future | Out of scope |
+| 4 — Empty-hint feedback | **Done** | `hintFeedback` banner in `GameControls` |
+| 5 — Unit tests | **Done** | `src/utils/puzzleLogic.test.ts` via vitest |
+| 6 — 4×4 / 5×5 hints | **Cancelled** | Out of scope |
 
 ## Original problem
 
@@ -29,7 +29,8 @@ GameControls.onHint
       → setHintLoading(true) immediately
       → InteractionManager.runAfterInteractions(...)
           → findHintMoveSequence(board, size, excludedReverseMove, 3)
-          → dispatch SHOW_HINT { index, sequence }
+          → if empty: showHintFeedback("No hint available")
+          → else dispatch SHOW_HINT { index, sequence }
           → setHintLoading(false)
   → PuzzleBoard highlights tiles via hintIndex / hintSequence
   → CLEAR_HINT after 3s timeout
@@ -40,11 +41,12 @@ new hint tap, or unmount.
 
 Key files:
 - `src/utils/puzzleLogic.ts` — IDA\* solver (`findHintMoveSequence3x3`, `getHintFirstMoves`)
-- `src/hooks/usePuzzleGame.ts` — async `handleHint`, `hintLoading`, `cancelHintSearch`
-- `src/components/GameControls.tsx` — Hint button with spinner + "Thinking…"
+- `src/utils/puzzleLogic.test.ts` — vitest coverage for hint logic
+- `src/hooks/usePuzzleGame.ts` — async `handleHint`, `hintLoading`, `hintFeedback`
+- `src/components/GameControls.tsx` — Hint button + feedback banner
 - `src/components/PuzzleBoard.tsx` — maps `hintSequence` to tile badges
 - `src/components/Tile.tsx` — hint border + numbered badge UI
-- `App.tsx` — wires `hintLoading` to `GameControls`
+- `App.tsx` — wires `hintLoading` and `hintFeedback`
 
 ## Completed changes
 
@@ -54,7 +56,7 @@ Key files:
 - Mutable path array in recursion to reduce allocations
 - Returns first `maxMoves` of optimal path to solved state
 
-**Benchmarks (after fix, 50 random 3×3 boards):**
+**Benchmarks (50 random 3×3 boards):**
 
 | Metric | BFS (before) | IDA\* (after) |
 |--------|--------------|---------------|
@@ -63,14 +65,14 @@ Key files:
 | Hard board | ~2500ms | ~158ms |
 | Max | — | ~915ms |
 
-### Phase 2 — Async hint computation (`usePuzzleGame.ts`, `GameControls.tsx`, `App.tsx`)
+### Phase 2 — Async hint computation
 
-- `hintLoading` state set synchronously on tap
+- `hintLoading` set synchronously on tap
 - Solver runs in `InteractionManager.runAfterInteractions`
 - Request ID + `cancelHintSearch()` on board change, re-tap, unmount
-- Hint button shows `ActivityIndicator` + "Thinking…", disabled while loading
+- Hint button shows `ActivityIndicator` + "Thinking…"
 
-### Phase 3 — Exclusion logic (`puzzleLogic.ts`, `usePuzzleGame.ts`)
+### Phase 3 — Exclusion logic
 
 `getHintFirstMoves()` rules:
 - Skip undo tile only when **other moves exist**
@@ -78,34 +80,28 @@ Key files:
 - Allow sole neighbor even if it is the undo tile
 - `handleHint` deps include `state.history`
 
-## Remaining work
+### Phase 4 — Empty-hint feedback
 
-### Phase 4 — User feedback for empty hints
+- `hintFeedback` state in `usePuzzleGame`
+- Shows "No hint available" banner below action buttons for 2.5s
+- Cleared on board change, new hint request, or unmount
 
-When `hintSequence.length === 0`, show toast or inline message: "No hint available".
+### Phase 5 — Unit tests
 
-### Phase 5 — Tests
-
-Add `src/utils/puzzleLogic.test.ts`:
-
-| Case | Expect |
-|------|--------|
-| Solved board | `[]` |
-| One move from solved | `[tileIndex]` |
-| Random shuffled 3×3 | non-empty sequence, each move valid |
-| After player move | sequence does not start with reverse (unless it solves) |
-| 4×4 / 5×5 | `[]` (unsupported) |
-| Performance | median hint < 100ms |
-
-### Phase 6 — Future (out of scope unless requested)
-
-- Extend hints to 4×4 / 5×5
-- Pattern database or greedy Manhattan hints for larger boards
+Run with `npm test`. Covers:
+- Solved board → `[]`
+- One move from solved → single winning tile
+- Random shuffled 3×3 → valid move sequences
+- Reverse-move exclusion (allows when solving, blocks otherwise)
+- 4×4 / 5×5 → `[]`
+- Median performance < 100ms
 
 ## Verification checklist
 
 - [x] Tap Hint on 3×3 — loading feedback is immediate
 - [x] Median hint resolves in < 100ms (IDA\*)
+- [x] Empty-hint user feedback (Phase 4)
+- [x] Unit tests pass (`npm test`)
 - [ ] Multi-step badge shows 1, 2, 3 on correct tiles (manual verify)
 - [ ] Hint clears after 3s (manual verify)
 - [ ] Hint clears on player move (manual verify)
@@ -113,7 +109,6 @@ Add `src/utils/puzzleLogic.test.ts`:
 - [ ] Hint works one move from solved (manual verify)
 - [x] No UI freeze during search (async + fast solver)
 - [x] 4×4 has no Hint button (unchanged)
-- [ ] Empty-hint user feedback (Phase 4)
 
 ## Implementation log
 
@@ -121,5 +116,6 @@ Add `src/utils/puzzleLogic.test.ts`:
 2. ~~`hintLoading` + async dispatch~~ (`usePuzzleGame.ts`) — **done**
 3. ~~Exclusion fix + history dep~~ (`puzzleLogic.ts`, `usePuzzleGame.ts`) — **done**
 4. ~~Loading UI on Hint button~~ (`GameControls.tsx`, `App.tsx`) — **done**
-5. Empty-hint feedback (`usePuzzleGame.ts`, `GameControls.tsx`) — **next**
-6. Unit tests (`puzzleLogic.test.ts`) — **pending**
+5. ~~Empty-hint feedback~~ (`usePuzzleGame.ts`, `GameControls.tsx`) — **done**
+6. ~~Unit tests~~ (`puzzleLogic.test.ts`, vitest) — **done**
+7. ~~4×4 / 5×5 hints~~ — **cancelled**
