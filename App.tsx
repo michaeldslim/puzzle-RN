@@ -23,6 +23,7 @@ export default function App() {
     canUndo,
     handleHint,
     hintLoading,
+    hintFeedback,
     handleShuffle,
     handleModeToggle,
     handleImageSet,
@@ -115,6 +116,7 @@ export default function App() {
               onShuffle={handleShuffle}
               onHint={handleHint}
               hintLoading={hintLoading}
+              hintFeedback={hintFeedback}
               onUndo={handleUndo}
               onModeToggle={handleModeToggle}
               onImagePick={handleImageSet}

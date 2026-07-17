@@ -120,7 +120,9 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
 export const usePuzzleGame = () => {
   const [state, dispatch] = useReducer(puzzleReducer, initialState);
   const [hintLoading, setHintLoading] = useState(false);
+  const [hintFeedback, setHintFeedback] = useState<string | null>(null);
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hintFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hintRequestIdRef = useRef(0);
   const hintInteractionRef = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -131,6 +133,23 @@ export const usePuzzleGame = () => {
     hintInteractionRef.current?.cancel();
     hintInteractionRef.current = null;
     setHintLoading(false);
+    if (hintFeedbackTimeoutRef.current) {
+      clearTimeout(hintFeedbackTimeoutRef.current);
+      hintFeedbackTimeoutRef.current = null;
+    }
+    setHintFeedback(null);
+  }, []);
+
+  const showHintFeedback = useCallback((message: string) => {
+    if (hintFeedbackTimeoutRef.current) {
+      clearTimeout(hintFeedbackTimeoutRef.current);
+      hintFeedbackTimeoutRef.current = null;
+    }
+    setHintFeedback(message);
+    hintFeedbackTimeoutRef.current = setTimeout(() => {
+      setHintFeedback(null);
+      hintFeedbackTimeoutRef.current = null;
+    }, 2500);
   }, []);
 
   const scheduleHintClear = useCallback(() => {
@@ -206,7 +225,10 @@ export const usePuzzleGame = () => {
       setHintLoading(false);
       hintInteractionRef.current = null;
 
-      if (hintSequence.length === 0) return;
+      if (hintSequence.length === 0) {
+        showHintFeedback('No hint available');
+        return;
+      }
 
       dispatch({
         type: 'SHOW_HINT',
@@ -217,7 +239,7 @@ export const usePuzzleGame = () => {
       });
       scheduleHintClear();
     });
-  }, [state.board, state.size, state.isComplete, state.history, scheduleHintClear]);
+  }, [state.board, state.size, state.isComplete, state.history, scheduleHintClear, showHintFeedback]);
 
   useEffect(() => {
     cancelHintSearch();
@@ -233,6 +255,10 @@ export const usePuzzleGame = () => {
   useEffect(() => {
     return () => {
       cancelHintSearch();
+      if (hintFeedbackTimeoutRef.current) {
+        clearTimeout(hintFeedbackTimeoutRef.current);
+        hintFeedbackTimeoutRef.current = null;
+      }
       if (hintTimeoutRef.current) {
         clearTimeout(hintTimeoutRef.current);
         hintTimeoutRef.current = null;
@@ -283,6 +309,7 @@ export const usePuzzleGame = () => {
     canUndo: state.history.length > 0,
     handleHint,
     hintLoading,
+    hintFeedback,
     handleShuffle,
     handleSizeChange,
     handleModeToggle,

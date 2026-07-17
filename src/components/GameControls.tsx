@@ -13,6 +13,7 @@ interface IGameControlsProps {
   onShuffle: () => void;
   onHint: () => void;
   hintLoading?: boolean;
+  hintFeedback?: string | null;
   onUndo: () => void;
   onModeToggle: () => void;
   onImagePick: (imageUri: string) => void;
@@ -28,6 +29,7 @@ const GameControls: React.FC<IGameControlsProps> = ({
   onShuffle,
   onHint,
   hintLoading = false,
+  hintFeedback = null,
   onUndo,
   onModeToggle,
   onImagePick,
@@ -147,6 +149,10 @@ const GameControls: React.FC<IGameControlsProps> = ({
           <Text style={styles.actionLabel}>Shuffle</Text>
         </TouchableOpacity>
       </View>
+
+      {currentSize === 3 && hintFeedback && (
+        <Text style={styles.hintFeedbackText}>{hintFeedback}</Text>
+      )}
 
       {/* Image preview modal */}
       <Modal visible={previewVisible} transparent animationType="fade" onRequestClose={() => setPreviewVisible(false)}>
@@ -332,6 +338,18 @@ const styles = StyleSheet.create({
   },
   disabledLabel: {
     color: '#ffffff',
+  },
+  hintFeedbackText: {
+    textAlign: 'center',
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#b45309',
+    backgroundColor: '#fffbeb',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fde68a',
   },
 });
 
