@@ -1,0 +1,134 @@
+---
+description: Plan to fix broken hint system and improve puzzle game logic
+globs: src/utils/puzzleLogic.ts,src/hooks/usePuzzleGame.ts,src/components/PuzzleBoard.tsx,src/components/Tile.tsx,src/components/GameControls.tsx
+alwaysApply: false
+---
+
+# Hint & Game Logic Improvement Plan
+
+## Problem
+
+The Hint button appears to do nothing. Investigation shows the algorithm **does** return valid move sequences in isolation, but the current implementation has serious performance and UX gaps that make hints feel broken in the app.
+
+## Architecture (current flow)
+
+```
+GameControls.onHint → usePuzzleGame.handleHint
+  → findHintMoveSequence(board, size, excludedReverseMove, 3)
+  → dispatch SHOW_HINT { index, sequence }
+  → PuzzleBoard highlights tiles via hintIndex / hintSequence
+  → CLEAR_HINT after 3s timeout
+```
+
+Key files:
+- `src/utils/puzzleLogic.ts` — BFS solver (`findHintMoveSequence3x3`)
+- `src/hooks/usePuzzleGame.ts` — `handleHint`, reducer `SHOW_HINT` / `CLEAR_HINT`
+- `src/components/PuzzleBoard.tsx` — maps `hintSequence` to tile badges
+- `src/components/Tile.tsx` — hint border + numbered badge UI
+
+## Investigation findings
+
+### 1. Performance (primary suspect)
+
+Plain BFS over the full 3×3 state space blocks the JS thread:
+- ~**1.3s** average per hint call
+- ~**2.5s** on harder boards
+
+On React Native this freezes the UI during search. The user taps Hint, sees no immediate feedback, and assumes it failed. Even when a hint eventually dispatches, the experience feels broken.
+
+`getManhattanDistance` already exists but is **unused** by the hint solver.
+
+### 2. Algorithm works in isolation
+
+50 random shuffled 3×3 boards → **0 failures**. Sequences like `[0, 3, 4]` are returned correctly. The bug is likely runtime/UX, not a completely dead code path.
+
+### 3. Reverse-move exclusion edge case
+
+`handleHint` excludes `findEmptyTile(previousBoard)` to avoid suggesting an undo. When the puzzle is **one move from solved**, the only optimal move is often that reverse — exclusion can force BFS to search much longer paths or return `[]` when only one neighbor exists.
+
+### 4. Stale closure risk
+
+`handleHint` depends on `[state.board, state.size, state.isComplete]` but reads `state.history`. Add `state.history` to the dependency array.
+
+### 5. Silent failure
+
+When `hintSequence.length === 0`, `handleHint` returns with no user feedback. Causes: solved board, non-3×3 size, exclusion edge case, or (unlikely) unsolvable board.
+
+### 6. UI path looks correct
+
+`PuzzleBoard` passes `isHint` / `hintDirection` to `Tile`. Empty tile correctly skips hint styling. No obvious render bug found — verify after performance fix.
+
+## Fix plan
+
+### Phase 1 — Make hints responsive (highest priority)
+
+Replace full BFS with **A\*** (or IDA\*) using existing `getManhattanDistance`:
+
+```typescript
+// Target: < 50ms per hint on 3×3
+// Priority queue ordered by f = g + h
+// Stop when goal reached; return first maxMoves of path
+```
+
+- Cap search depth or node budget as a safety valve
+- Consider precomputed pattern database later if needed (optional)
+
+### Phase 2 — Async hint computation
+
+Move search off the critical tap path:
+
+```typescript
+// On hint press: set hintLoading = true immediately
+// Run solver in requestIdleCallback / setTimeout(0) / InteractionManager.runAfterInteractions
+// Dispatch SHOW_HINT when done; hintLoading = false
+```
+
+Show a loading state on the Hint button so feedback is instant.
+
+### Phase 3 — Fix exclusion logic
+
+- Only exclude reverse move when **more than one** valid first move exists
+- Or: allow reverse when it **solves the puzzle** (distance-to-solved = 1)
+- Add `state.history` to `handleHint` deps
+
+### Phase 4 — User feedback for empty hints
+
+- Toast or label: "No hint available" when sequence is empty
+- Disable Hint when `isComplete` (already done) or `size !== 3` (already hidden)
+
+### Phase 5 — Tests
+
+Add `src/utils/puzzleLogic.test.ts` (or similar):
+
+| Case | Expect |
+|------|--------|
+| Solved board | `[]` |
+| One move from solved | `[tileIndex]` |
+| Random shuffled 3×3 | non-empty sequence, each move valid |
+| After player move | sequence does not start with reverse (unless it solves) |
+| 4×4 / 5×5 | `[]` (unsupported) |
+| Performance | hint resolves in < 100ms |
+
+### Phase 6 — Future (out of scope unless requested)
+
+- Extend hints to 4×4 / 5×5 with A* + stronger heuristics
+- Use Manhattan improvement moves instead of full optimal path for "good enough" hints
+
+## Verification checklist
+
+- [ ] Tap Hint on 3×3 — badge appears on tile(s) within 100ms
+- [ ] Multi-step badge shows 1, 2, 3 on correct tiles
+- [ ] Hint clears after 3s
+- [ ] Hint clears on player move
+- [ ] Hint works after several moves (history / exclusion)
+- [ ] Hint works one move from solved
+- [ ] No UI freeze during search
+- [ ] 4×4 has no Hint button (unchanged)
+
+## Implementation order
+
+1. A* solver replacing BFS (`puzzleLogic.ts`)
+2. `hintLoading` + async dispatch (`usePuzzleGame.ts`)
+3. Exclusion fix + history dep (`usePuzzleGame.ts`)
+4. Loading UI on Hint button (`GameControls.tsx`)
+5. Unit tests (`puzzleLogic.test.ts`)
