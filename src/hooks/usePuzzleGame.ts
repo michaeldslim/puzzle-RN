@@ -185,7 +185,7 @@ export const usePuzzleGame = () => {
       dispatch({ type: 'CLEAR_HINT' });
       hintTimeoutRef.current = null;
     }, 3000);
-  }, [state.board, state.size, state.isComplete]);
+  }, [state.board, state.size, state.isComplete, state.history]);
 
   // Preload card sound on mount so first move plays instantly
   useEffect(() => {

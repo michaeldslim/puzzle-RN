@@ -184,7 +184,73 @@ export const getManhattanDistance = (board: number[], size: number): number => {
   return distance;
 };
 
-const serializeBoard = (board: number[]): string => board.join(',');
+/**
+ * Picks valid first moves, skipping the undo tile only when alternatives exist.
+ * Always allows the reverse move when it solves the puzzle in one step.
+ */
+const getHintFirstMoves = (
+  board: number[],
+  emptyIdx: number,
+  size: number,
+  excludedFirstMove: number | null
+): number[] => {
+  const allMoves = getValidMoves(emptyIdx, size);
+  if (excludedFirstMove === null || !allMoves.includes(excludedFirstMove)) {
+    return allMoves;
+  }
+  if (isSolved(makeMove(board, excludedFirstMove))) {
+    return allMoves;
+  }
+  if (allMoves.length <= 1) {
+    return allMoves;
+  }
+  return allMoves.filter((move) => move !== excludedFirstMove);
+};
+
+type IdaSearchResult =
+  | { found: true; path: number[] }
+  | { found: false; nextThreshold: number };
+
+const idaStarSearch = (
+  board: number[],
+  emptyIdx: number,
+  g: number,
+  threshold: number,
+  path: number[],
+  size: number,
+  excludedFirstMove: number | null
+): IdaSearchResult => {
+  const h = getManhattanDistance(board, size);
+  const f = g + h;
+  if (f > threshold) return { found: false, nextThreshold: f };
+
+  if (isSolved(board)) return { found: true, path };
+
+  let nextThreshold = Number.POSITIVE_INFINITY;
+  const moves =
+    path.length === 0
+      ? getHintFirstMoves(board, emptyIdx, size, excludedFirstMove)
+      : getValidMoves(emptyIdx, size);
+
+  for (const move of moves) {
+    path.push(move);
+    const result = idaStarSearch(
+      makeMove(board, move),
+      move,
+      g + 1,
+      threshold,
+      path,
+      size,
+      excludedFirstMove
+    );
+
+    if (result.found) return result;
+    path.pop();
+    nextThreshold = Math.min(nextThreshold, result.nextThreshold);
+  }
+
+  return { found: false, nextThreshold };
+};
 
 const findHintMoveSequence3x3 = (
   board: number[],
@@ -195,50 +261,30 @@ const findHintMoveSequence3x3 = (
 
   const size = 3;
   const initialEmpty = findEmptyTile(board);
-  const firstMoves = getValidMoves(initialEmpty, size).filter((move) => move !== excludedFirstMove);
+  const firstMoves = getHintFirstMoves(board, initialEmpty, size, excludedFirstMove);
   if (firstMoves.length === 0) return [];
 
-  const visited = new Set<string>([serializeBoard(board)]);
-  const queue: Array<{
-    board: number[];
-    emptyIdx: number;
-    path: number[];
-  }> = [];
-
-  for (const firstMove of firstMoves) {
-    const nextBoard = makeMove(board, firstMove);
-    const key = serializeBoard(nextBoard);
-    if (visited.has(key)) continue;
-
-    if (isSolved(nextBoard)) return [firstMove].slice(0, maxMoves);
-
-    visited.add(key);
-    queue.push({
-      board: nextBoard,
-      emptyIdx: firstMove,
-      path: [firstMove],
-    });
+  for (const move of firstMoves) {
+    const nextBoard = makeMove(board, move);
+    if (isSolved(nextBoard)) return [move].slice(0, maxMoves);
   }
 
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current) break;
+  let threshold = getManhattanDistance(board, size);
 
-    for (const move of getValidMoves(current.emptyIdx, size)) {
-      const nextBoard = makeMove(current.board, move);
-      const key = serializeBoard(nextBoard);
-      if (visited.has(key)) continue;
+  while (threshold < Number.POSITIVE_INFINITY) {
+    const result = idaStarSearch(
+      board,
+      initialEmpty,
+      0,
+      threshold,
+      [],
+      size,
+      excludedFirstMove
+    );
 
-      const nextPath = [...current.path, move];
-      if (isSolved(nextBoard)) return nextPath.slice(0, maxMoves);
-
-      visited.add(key);
-      queue.push({
-        board: nextBoard,
-        emptyIdx: move,
-        path: nextPath,
-      });
-    }
+    if (result.found) return result.path.slice(0, maxMoves);
+    if (result.nextThreshold === Number.POSITIVE_INFINITY) break;
+    threshold = result.nextThreshold;
   }
 
   return [];
