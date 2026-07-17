@@ -22,6 +22,7 @@ export default function App() {
     handleUndo,
     canUndo,
     handleHint,
+    hintLoading,
     handleShuffle,
     handleModeToggle,
     handleImageSet,
@@ -113,6 +114,7 @@ export default function App() {
               onSizeChange={handleSizeChange}
               onShuffle={handleShuffle}
               onHint={handleHint}
+              hintLoading={hintLoading}
               onUndo={handleUndo}
               onModeToggle={handleModeToggle}
               onImagePick={handleImageSet}

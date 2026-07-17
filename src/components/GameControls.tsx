@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, Image, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, Image, Dimensions, ActivityIndicator } from 'react-native';
 import { PuzzleSize } from '../../types';
 import { pickImageFromGallery, takePhoto } from '../utils/imageUtils';
 
@@ -12,6 +12,7 @@ interface IGameControlsProps {
   onSizeChange: (size: PuzzleSize) => void;
   onShuffle: () => void;
   onHint: () => void;
+  hintLoading?: boolean;
   onUndo: () => void;
   onModeToggle: () => void;
   onImagePick: (imageUri: string) => void;
@@ -26,6 +27,7 @@ const GameControls: React.FC<IGameControlsProps> = ({
   onSizeChange,
   onShuffle,
   onHint,
+  hintLoading = false,
   onUndo,
   onModeToggle,
   onImagePick,
@@ -117,10 +119,16 @@ const GameControls: React.FC<IGameControlsProps> = ({
           <TouchableOpacity
             style={[styles.actionButton, styles.hintButton, isComplete && styles.disabledButton]}
             onPress={onHint}
-            disabled={isComplete}
+            disabled={isComplete || hintLoading}
           >
-            <Text style={styles.actionIcon}>💡</Text>
-            <Text style={[styles.actionLabel, isComplete && styles.disabledLabel]}>Hint</Text>
+            {hintLoading ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text style={styles.actionIcon}>💡</Text>
+            )}
+            <Text style={[styles.actionLabel, isComplete && styles.disabledLabel]}>
+              {hintLoading ? 'Thinking…' : 'Hint'}
+            </Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity

@@ -1,4 +1,5 @@
-import { useReducer, useEffect, useCallback, useRef } from 'react';
+import { useReducer, useEffect, useCallback, useRef, useState } from 'react';
+import { InteractionManager } from 'react-native';
 import { Audio } from 'expo-av';
 import { IPuzzleState, IPuzzleAction, PuzzleSize } from '../../types';
 import { shuffleBoard, isSolved, findEmptyTile, findHintMoveSequence } from '../utils/puzzleLogic';
@@ -118,9 +119,30 @@ const puzzleReducer = (state: IPuzzleState, action: IPuzzleAction): IPuzzleState
 
 export const usePuzzleGame = () => {
   const [state, dispatch] = useReducer(puzzleReducer, initialState);
+  const [hintLoading, setHintLoading] = useState(false);
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hintRequestIdRef = useRef(0);
+  const hintInteractionRef = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const cardSoundRef = useRef<Audio.Sound | null>(null);
+
+  const cancelHintSearch = useCallback(() => {
+    hintRequestIdRef.current += 1;
+    hintInteractionRef.current?.cancel();
+    hintInteractionRef.current = null;
+    setHintLoading(false);
+  }, []);
+
+  const scheduleHintClear = useCallback(() => {
+    if (hintTimeoutRef.current) {
+      clearTimeout(hintTimeoutRef.current);
+      hintTimeoutRef.current = null;
+    }
+    hintTimeoutRef.current = setTimeout(() => {
+      dispatch({ type: 'CLEAR_HINT' });
+      hintTimeoutRef.current = null;
+    }, 3000);
+  }, []);
 
   const playCardSound = useCallback(async () => {
     try {
@@ -166,26 +188,40 @@ export const usePuzzleGame = () => {
 
   const handleHint = useCallback(() => {
     if (state.isComplete || state.size !== 3) return;
+
+    const requestId = ++hintRequestIdRef.current;
+    hintInteractionRef.current?.cancel();
+    setHintLoading(true);
+
+    const board = state.board;
+    const size = state.size;
     const previousBoard = state.history.length > 0 ? state.history[state.history.length - 1] : null;
     const excludedReverseMove = previousBoard ? findEmptyTile(previousBoard) : null;
-    const hintSequence = findHintMoveSequence(state.board, state.size, excludedReverseMove, 3);
-    if (hintSequence.length === 0) return;
-    dispatch({
-      type: 'SHOW_HINT',
-      payload: {
-        index: hintSequence[0],
-        sequence: hintSequence,
-      },
+
+    hintInteractionRef.current = InteractionManager.runAfterInteractions(() => {
+      const hintSequence = findHintMoveSequence(board, size, excludedReverseMove, 3);
+
+      if (requestId !== hintRequestIdRef.current) return;
+
+      setHintLoading(false);
+      hintInteractionRef.current = null;
+
+      if (hintSequence.length === 0) return;
+
+      dispatch({
+        type: 'SHOW_HINT',
+        payload: {
+          index: hintSequence[0],
+          sequence: hintSequence,
+        },
+      });
+      scheduleHintClear();
     });
-    if (hintTimeoutRef.current) {
-      clearTimeout(hintTimeoutRef.current);
-      hintTimeoutRef.current = null;
-    }
-    hintTimeoutRef.current = setTimeout(() => {
-      dispatch({ type: 'CLEAR_HINT' });
-      hintTimeoutRef.current = null;
-    }, 3000);
-  }, [state.board, state.size, state.isComplete, state.history]);
+  }, [state.board, state.size, state.isComplete, state.history, scheduleHintClear]);
+
+  useEffect(() => {
+    cancelHintSearch();
+  }, [state.board, cancelHintSearch]);
 
   // Preload card sound on mount so first move plays instantly
   useEffect(() => {
@@ -196,6 +232,7 @@ export const usePuzzleGame = () => {
 
   useEffect(() => {
     return () => {
+      cancelHintSearch();
       if (hintTimeoutRef.current) {
         clearTimeout(hintTimeoutRef.current);
         hintTimeoutRef.current = null;
@@ -245,6 +282,7 @@ export const usePuzzleGame = () => {
     handleUndo,
     canUndo: state.history.length > 0,
     handleHint,
+    hintLoading,
     handleShuffle,
     handleSizeChange,
     handleModeToggle,
