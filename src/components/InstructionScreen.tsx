@@ -8,6 +8,9 @@ import {
   Image,
   Switch,
 } from 'react-native';
+import Constants from 'expo-constants';
+
+const appVersion = Constants.expoConfig?.version ?? '';
 
 interface IInstructionScreenProps {
   onStart: () => void;
@@ -43,9 +46,12 @@ const InstructionScreen: React.FC<IInstructionScreenProps> = ({
         </View>
 
         {/* Start button */}
-        <TouchableOpacity style={styles.startBtn} onPress={onStart} activeOpacity={0.85}>
-          <Text style={styles.startBtnText}>Start Game →</Text>
-        </TouchableOpacity>
+        <View style={styles.startSection}>
+          <TouchableOpacity style={styles.startBtn} onPress={onStart} activeOpacity={0.85}>
+            <Text style={styles.startBtnText}>Start Game →</Text>
+          </TouchableOpacity>
+          {appVersion ? <Text style={styles.versionText}>v{appVersion}</Text> : null}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -103,6 +109,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#334155',
   },
+  startSection: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: 10,
+  },
   startBtn: {
     alignSelf: 'stretch',
     backgroundColor: '#3b82f6',
@@ -120,6 +131,11 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  versionText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#94a3b8',
   },
 });
 
